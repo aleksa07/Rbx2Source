@@ -1,13 +1,84 @@
 name: Version Released
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name for the release (e.g. v2.68)"
+        required: true
+        type: string
+
 jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Clone Dependency Repository
+        run: |
+          cd ..
+          git clone https://github.com/MaximumADHD/Roblox-File-Format.git
+          cd Roblox-File-Format
+          nuget restore
+
+      - name: Restore dependencies
+        run: nuget restore
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Build Release
+        run: msbuild Rbx2Source.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Get tag name
+        id: tag
+        run: |
+          $tag = "${{ github.event.inputs.tag }}"
+          if ([string]::IsNullOrEmpty($tag)) { $tag = "${{ github.ref_name }}" }
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        shell: bash
+        run: |
+          prev_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$prev_tag" ]; then
+            log=$(git log "$prev_tag"..HEAD --pretty=format:"* %s (%h)" --no-merges)
+          else
+            log=$(git log --pretty=format:"* %s (%h)" --no-merges)
+          fi
+          echo "log<<EOF" >> $GITHUB_OUTPUT
+          echo "$log" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Rbx2Source ${{ steps.tag.outputs.tag }}
+          body: |
+            ## Changelog
+            ${{ steps.changelog.outputs.log }}
+          files: bin/Release/Rbx2Source.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   virustotal:
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      -
-        name: VirusTotal Scan
+      - uses: actions/checkout@v3
+
+      - name: VirusTotal Scan
         continue-on-error: true
         uses: crazy-max/ghaction-virustotal@v3
         with:
