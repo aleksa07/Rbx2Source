@@ -16,7 +16,7 @@ jobs:
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -31,7 +31,7 @@ jobs:
         run: nuget restore
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
 
       - name: Build Release
         run: msbuild Rbx2Source.sln /p:Configuration=Release /p:Platform="Any CPU"
@@ -76,7 +76,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: VirusTotal Scan
         continue-on-error: true
