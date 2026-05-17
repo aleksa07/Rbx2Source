@@ -20,6 +20,6 @@
 - Having layered clothing on your avatar will cause the compilier to error out. Layered clothing is *not* a planned feature at the moment.
 
 # Contributors
-<a href="https://github.com/MaximumADHD/Rbx2Source/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=MaximumADHD/Rbx2Source" />
+<a href="https://github.com/aleksa07/Rbx2Source/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=aleksa07/Rbx2Source" />
 </a>
