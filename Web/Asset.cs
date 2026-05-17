@@ -159,7 +159,8 @@ namespace Rbx2Source.Web
                 Asset asset = null;
                 Uri location = responseItem.Location;
 
-                var identifier = location.Segments[1];
+                var segments = location.Segments;
+                var identifier = segments.Length > 1 ? segments[1] : assetId.ToString();
                 var cachedFile = assetCacheDir + '\\' + identifier;
 
                 if (File.Exists(cachedFile))

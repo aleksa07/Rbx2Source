@@ -49,7 +49,9 @@ namespace Rbx2Source.Web
                 AssetType.RunAnimation,
                 AssetType.SwimAnimation,
                 AssetType.WalkAnimation,
-                AssetType.PoseAnimation
+                AssetType.PoseAnimation,
+                AssetType.MoodAnimation,
+                AssetType.EmoteAnimation
             });
 
             groups = result;

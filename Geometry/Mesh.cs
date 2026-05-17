@@ -798,12 +798,69 @@ namespace Rbx2Source.Geometry
                     material.AddTextureAsset("bumpmap", normalAsset);
                 }
 
-                result = FromAsset(meshAsset);
+                try
+                {
+                    result = FromAsset(meshAsset);
+                }
+                catch
+                {
+                    try
+                    {
+                        // Not a .mesh file — try opening as a Roblox model
+                        // and look for a MeshPart or SpecialMesh inside.
+                        var import = meshAsset.OpenAsModel();
+                        var meshParts = import.GetDescendantsOfType<MeshPart>();
+                        var meshPart = meshParts.FirstOrDefault();
+
+                        string innerId = meshPart?.MeshId;
+
+                        if (innerId != null && innerId.Length > 0)
+                        {
+                            result = FromAsset(Asset.GetByAssetId(innerId));
+                        }
+                        else
+                        {
+                            var specialMeshs = import.GetDescendantsOfType<SpecialMesh>();
+                            var specialMesh = specialMeshs.FirstOrDefault();
+
+                            if (specialMesh != null)
+                            {
+                                innerId = specialMesh.MeshId;
+
+                                if (innerId != null && innerId.Length > 0)
+                                    result = FromAsset(Asset.GetByAssetId(innerId));
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Could not load geometry from any format.
+                    }
+                }
+
+                if (result == null)
+                {
+                    // Dynamic/legacy heads may use a mesh format we can't parse;
+                    // fall back to the default head mesh template.
+                    if (part != null)
+                    {
+                        BodyPart? limb = CharacterAssembler.GetLimb(part);
+                        if (limb == BodyPart.Head)
+                        {
+                            Asset defaultHead = Asset.FromResource("Meshes/Heads/Default.mesh");
+                            try { result = FromAsset(defaultHead); } catch { }
+                        }
+                    }
+
+                    if (result == null)
+                        result = new Mesh();
+                }
 
                 if (MorphObjs.ContainsKey(meshAsset.Id))
                     result = BuildMorph(meshAsset.Id, result);
 
-                result.BakeGeometry(scale, offset);
+                if (result != null)
+                    result.BakeGeometry(scale, offset);
             }
 
             return result;

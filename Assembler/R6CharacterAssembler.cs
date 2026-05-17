@@ -104,8 +104,26 @@ namespace Rbx2Source.Assembler
                     var characterMesh = asset as CharacterMesh;
                     string limbName = LimbMatcher[characterMesh.BodyPart];
 
-                    var limb = assembly.FindFirstChild<MeshPart>(limbName);
-                    limb.MeshId = "rbxassetid://" + characterMesh.MeshId;
+                    var limb = assembly.FindFirstChild<BasePart>(limbName);
+                    if (limb is MeshPart meshLimb)
+                    {
+                        meshLimb.MeshId = "rbxassetid://" + characterMesh.MeshId;
+                    }
+                    else if (limb is Part partLimb)
+                    {
+                        var meshPart = new MeshPart
+                        {
+                            Name = partLimb.Name,
+                            CFrame = partLimb.CFrame,
+                            Size = partLimb.Size,
+                            InitialSize = partLimb.Size,
+                            Color = partLimb.Color,
+                            BrickColor = partLimb.BrickColor,
+                            MeshId = "rbxassetid://" + characterMesh.MeshId,
+                            Parent = partLimb.Parent
+                        };
+                        partLimb.Destroy();
+                    }
                 }
                 else if (asset is Accoutrement && !collisionModel)
                 {
@@ -184,6 +202,7 @@ namespace Rbx2Source.Assembler
             textures.BindTexture("Head", head);
 
             Bitmap body = TextureCompositor.CropBitmap(core, RECT_BODY);
+
             Folder characterAssets = compositor.CharacterAssets;
 
             Rbx2Source.Print("Processing Package Textures...");
@@ -265,7 +284,7 @@ namespace Rbx2Source.Assembler
             {
                 Bitmap bitmap = limbBitmaps[id];
                 string matName = GetBodyMatName(id);
-                textures.BindTexture(matName, bitmap);
+                textures.Images.Add(matName + "_basetexture", bitmap);
             }
 
             // Link the limbs to their textures.
@@ -275,7 +294,7 @@ namespace Rbx2Source.Assembler
                 string matName = GetBodyMatName(id);
 
                 string limbName = Rbx2Source.GetEnumName(limb);
-                textures.BindTextureAlias(limbName, matName);
+                textures.BindTextureAlias(limbName, matName + "_basetexture", "basetexture");
             }
 
             // Handle the rest of the materials

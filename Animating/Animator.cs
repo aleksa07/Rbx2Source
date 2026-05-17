@@ -140,6 +140,9 @@ namespace Rbx2Source.Animating
                 .OrderBy(keyframe => keyframe.Time)
                 .ToList();
 
+            if (keyframes.Count == 0)
+                return animWriter.BuildFile();
+
             float fLength = keyframes.Last().Time;
             int frameCount = ToFrameRate(fLength);
 

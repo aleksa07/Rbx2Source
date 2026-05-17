@@ -411,20 +411,39 @@ namespace Rbx2Source.Assembler
 
                 if (head != null)
                 {
+                    // Dynamic head as MeshPart with baked texture.
+                    if (head is MeshPart meshHead)
+                    {
+                        string texId = meshHead.TextureID;
+                        if (texId != null && texId.Length > 0)
+                            return Asset.GetByAssetId(texId);
+                    }
+
+                    // Dynamic head via SpecialMesh with NoFace tag.
                     SpecialMesh headMesh = head.FindFirstChildOfClass<SpecialMesh>();
 
                     if (headMesh != null && headMesh.TextureId != null)
                     {
                         string textureId = headMesh.TextureId;
 
-                        if (textureId.Length > 0)
-                        {
-                            if (headMesh.Tags.Contains("NoFace"))
-                            {
-                                return Asset.GetByAssetId(headMesh.TextureId);
-                            }
-                        }
+                        if (textureId.Length > 0 && headMesh.Tags.Contains("NoFace"))
+                            return Asset.GetByAssetId(headMesh.TextureId);
                     }
+                }
+            }
+
+            // Fallback: search characterAssets for dynamic head MeshParts outside ASSEMBLY.
+            foreach (MeshPart part in characterAssets.GetDescendantsOfType<MeshPart>())
+            {
+                if (part.Parent == assembly)
+                    continue;
+
+                BodyPart? limb = GetLimb(part);
+                if (limb == BodyPart.Head)
+                {
+                    string texId = part.TextureID;
+                    if (texId != null && texId.Length > 0)
+                        return Asset.GetByAssetId(texId);
                 }
             }
 
