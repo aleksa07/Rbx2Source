@@ -106,10 +106,11 @@ namespace Rbx2Source
                         MessageBoxIcon.Information);
 
                     if (result == DialogResult.Yes)
-                    {
                         Process.Start("https://github.com/aleksa07/Rbx2Source/releases/latest");
-                    }
                 }
+
+                Settings.SaveSetting("CurrentVersion", latestVersion);
+                Settings.Save();
             }
             catch
             {
