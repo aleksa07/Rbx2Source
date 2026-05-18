@@ -102,6 +102,7 @@ namespace Rbx2Source
 
                 File.WriteAllBytes(updatePath, newVersion);
                 Settings.SaveSetting("CurrentVersion", latestVersion);
+                Settings.Save();
 
                 Process.Start(updatePath);
                 Application.Exit();
