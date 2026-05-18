@@ -33,29 +33,36 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - **`LodOffsets` fix** — Post-2023 COREMESH v2 body meshes include a `LODS` chunk that overwrites `LodOffsets` with `[0, 0]` after the `GEOM` chunk set it correctly. `LoadGeometry_Chunks` now guards: if `LodOffsets.Count >= 2 && LodOffsets[1] == 0 && Faces.Count > 0`, it corrects `LodOffsets[1]` to `Faces.Count`. Without this, `BuildAvatarGeometry` adds 0 triangles for all body part materials (Torso, LeftArm, RightArm, LeftLeg, RightLeg).
 - **`FindFirstChildOfClass<T>()`** defaults to `recursive: false` (direct children only). Use `GetDescendantsOfType<T>()` to search the full tree. This matters in `Mesh.BakePart` fallback when a model wraps its `MeshPart` inside folders.
 - **Layered clothing** — explicitly unsupported per README; `LayeredClothingExtractor` exists but is partial/incomplete.
-- **Self-update** — `Launcher.cs` downloads `version.txt` from `aleksa07/Rbx2Source` (experimental branch), compares to `App.config` `CurrentVersion`, downloads new `Rbx2Source.exe` if different (guarded by `#if !DEBUG`).
+- **Self-update** — `Launcher.cs` fetches `version.txt` from `aleksa07/Rbx2Source` (experimental), compares to Registry `CurrentVersion`. If different, shows a `MessageBox` popup — Yes opens release page, No continues. Saved to registry to avoid repeat prompts. Guarded by `#if !DEBUG`.
 
 ## Upcoming work
 - [ ] Feature: Complete layered clothing extraction (LayeredClothingExtractor partial)
 - [ ] Enhancement: Model name textbox could be saved/loaded from settings
 - [ ] Enhancement: OutfitID field in form could show outfit name on load
 
-## Completed
-- [x] Release: Version bumped to 2.9/2.9.2, auto-update restored (aleksa07/Rbx2Source), changelog added
-- [x] Release: README, About section, workflows updated to point to aleksa07
-- [x] Feature: About section — aleksa07 as maintainer (avatar + link), MaximumADHD moved to special thanks as "Original Creator"
-- [x] Bug: About section layout — shifted left contributors down + third-party/VTFCmd down to fix clipping
-- [x] Bug: Auto-updater pointed to experimental branch instead of main
+## v2.9.2 changelog
+- [x] Release: Bumped all version refs to 2.9.2 (AssemblyInfo, App.config, form title, version.txt, git tag)
 - [x] Feature: Model name textbox added to form, CustomModelName on CharacterAssembler
 - [x] Feature: Search bar accepts numeric UserID, OutfitID (prefix "outfit/" or "o:")
 - [x] Feature: UserAvatar.FromOutfitId() fetches outfit details from avatar API
+- [x] Feature: About section — aleksa07 as maintainer (avatar + link), MaximumADHD moved to special thanks
+- [x] Feature: Triangle-count logging in BuildAvatarGeometry and AssembleModel
+- [x] Bug: Post-2023 COREMESH v2 body meshes producing zero triangles fixed (LODS chunk guard)
 - [x] Bug: TrySetUsername wrapped in try-catch, null/empty guard
 - [x] Bug: UserData.FromUsername guards empty userInfos.Data before indexing
 - [x] Bug: SetDrawColor null-guarded
 - [x] Bug: compilerInputField_Leave uses try-finally to always re-enable controls
-- [x] Bug: Post-2023 COREMESH v2 body meshes producing zero triangles fixed (LODS chunk guard)
-- [x] Enhancement: Triangle-count logging in BuildAvatarGeometry and AssembleModel
-- [x] Enhancement: Auto-update replaced with popup prompt (MessageBox Yes/No -> opens release page)
-- [x] Bug: Auto-update loop fixed — added Settings.Save() after updating CurrentVersion (later scrapped in favor of popup)
+- [x] Bug: About section layout — shifted left contributors down + third-party/VTFCmd down to fix clipping
+- [x] Bug: Auto-update no longer silently downloads/overwrites — replaced with popup prompt
+- [x] Bug: CurrentVersion now initialized in Registry defaults (was missing, caused loop)
 - [x] Cleanup: version.txt removed from release assets
+
+## Version update checklist
+When bumping version (e.g. 2.9.2 → 2.9.3), update ALL of these:
+1. `Properties/AssemblyInfo.cs` — `AssemblyVersion` + `AssemblyFileVersion`
+2. `App.config` — `CurrentVersion` value
+3. `Forms/Rbx2Source.Designer.cs` — form title `"Rbx2Source vX.X"`
+4. `version.txt` — plain version string
+5. `Resources/Settings.cs` — `SetSetting("CurrentVersion", "X.X.X")` in the `InitializedV3` default block
+6. Git tag — delete old, create new on latest commit
 

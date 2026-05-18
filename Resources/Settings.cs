@@ -76,6 +76,7 @@ namespace Rbx2Source.Resources
                 SetSetting("CompilerType", "Avatar");
                 SetSetting("InitializedV3", true);
                 SetSetting("ApiKey", "");
+                SetSetting("CurrentVersion", "2.9.2");
             }
 
             software.Dispose();
