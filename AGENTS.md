@@ -30,6 +30,14 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
   - **Texture**: `GetAvatarFace` checks `characterAssets/ASSEMBLY/Head` first, then falls back to scanning all `characterAssets` descendants for `MeshPart` with `TextureID` where `GetLimb()` returns `BodyPart.Head`. The face texture is composited at layer 1 over the head color layer.
   - Head material (`Head.vmt`) and texture (`Head_basetexture.vtf`) are always emitted; only the geometry is affected.
 - **`.mesh` parser** — `FromBuffer()` checks for `"version "` prefix, supports ASCII (v1) and binary (v2-6). COREMESH chunk versions 1 (standard) and 2 (Draco) are handled; unknown versions are skipped (data consumed, no geometry loaded). All R15 body meshes (LowerTorso, UpperTorso, arms, legs) are `AssetTypeId=4` `RenderMesh` from 2016-2017 and use COREMESH v1. Post-2023 meshes may use COREMESH v2+ which can throw in Draco decode.
+- **`LodOffsets` fix** — Post-2023 COREMESH v2 body meshes include a `LODS` chunk that overwrites `LodOffsets` with `[0, 0]` after the `GEOM` chunk set it correctly. `LoadGeometry_Chunks` now guards: if `LodOffsets.Count >= 2 && LodOffsets[1] == 0 && Faces.Count > 0`, it corrects `LodOffsets[1]` to `Faces.Count`. Without this, `BuildAvatarGeometry` adds 0 triangles for all body part materials (Torso, LeftArm, RightArm, LeftLeg, RightLeg).
 - **`FindFirstChildOfClass<T>()`** defaults to `recursive: false` (direct children only). Use `GetDescendantsOfType<T>()` to search the full tree. This matters in `Mesh.BakePart` fallback when a model wraps its `MeshPart` inside folders.
 - **Layered clothing** — explicitly unsupported per README; `LayeredClothingExtractor` exists but is partial/incomplete.
 - **Self-update** — compares local version to GitHub `version.txt` on startup; downloads and renames `NEW_Rbx2Source.exe`.
+
+## Upcoming work
+
+<!-- Add pending features/bug fixes here as a list, e.g.:
+- [ ] Feature: ...
+- [ ] Bug: ...
+-->

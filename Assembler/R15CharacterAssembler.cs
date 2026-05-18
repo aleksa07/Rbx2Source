@@ -531,6 +531,10 @@ namespace Rbx2Source.Assembler
             foreach (StudioBone bone in bones)
                 BuildAvatarGeometry(meshBuilder, bone);
 
+            Rbx2Source.Print("Total triangles in builder: {0}", meshBuilder.Triangles.Count);
+            var matGroups = meshBuilder.Triangles.Select(t => t.Material).Distinct().ToList();
+            Rbx2Source.Print("Materials with triangles: {0}", string.Join(", ", matGroups));
+
             Rbx2Source.DecrementStack();
             return meshBuilder;
         }

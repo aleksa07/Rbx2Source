@@ -274,6 +274,8 @@ namespace Rbx2Source.Assembler
                 meshBuilder.Triangles.Add(tri);
             }
 
+            Rbx2Source.Print("  -> Added {0} triangles for material '{1}', LodOffsets[1]={2}", faceStride, matName, geometry.LodOffsets[1]);
+
             Rbx2Source.DecrementStack();
             Rbx2Source.MarkTaskCompleted(task);
         }
