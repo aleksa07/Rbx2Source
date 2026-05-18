@@ -41,9 +41,19 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - [ ] Enhancement: OutfitID field in form could show outfit name on load
 
 ## Completed
-- [x] Release: Version bumped to 2.9, auto-update restored (aleksa07/Rbx2Source), changelog added
+- [x] Release: Version bumped to 2.9/2.9.2, auto-update restored (aleksa07/Rbx2Source), changelog added
 - [x] Release: README, About section, workflows updated to point to aleksa07
 - [x] Feature: About section — aleksa07 as maintainer (avatar + link), MaximumADHD moved to special thanks as "Original Creator"
 - [x] Bug: About section layout — shifted left contributors down + third-party/VTFCmd down to fix clipping
 - [x] Bug: Auto-updater pointed to experimental branch instead of main
+- [x] Feature: Model name textbox added to form, CustomModelName on CharacterAssembler
+- [x] Feature: Search bar accepts numeric UserID, OutfitID (prefix "outfit/" or "o:")
+- [x] Feature: UserAvatar.FromOutfitId() fetches outfit details from avatar API
+- [x] Bug: TrySetUsername wrapped in try-catch, null/empty guard
+- [x] Bug: UserData.FromUsername guards empty userInfos.Data before indexing
+- [x] Bug: SetDrawColor null-guarded
+- [x] Bug: compilerInputField_Leave uses try-finally to always re-enable controls
+- [x] Bug: Post-2023 COREMESH v2 body meshes producing zero triangles fixed (LODS chunk guard)
+- [x] Enhancement: Triangle-count logging in BuildAvatarGeometry and AssembleModel
+- [x] Enhancement: Auto-update guarded with #if !DEBUG (skipped in Debug builds)
 
