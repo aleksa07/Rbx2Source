@@ -33,7 +33,7 @@ namespace Rbx2Source
             }
             else
             {
-                string gitPath = "https://raw.githubusercontent.com/aleksa07/Rbx2Source/main/" + localPath;
+                string gitPath = "https://raw.githubusercontent.com/aleksa07/Rbx2Source/experimental/" + localPath;
                 return await http.DownloadDataTaskAsync(gitPath);
             }
         }
