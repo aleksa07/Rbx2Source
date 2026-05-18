@@ -11,7 +11,7 @@
 
 # Building Instructions
 - Clone the github repository.
-- Clone [the Dependency repository](https://github.com/aleksa07/Roblox-File-Format/) as well, in the same directory that you cloned Rbx2Source in
+- Clone [the Dependency repository](https://github.com/MaximumADHD/Roblox-File-Format/) as well, in the same directory that you cloned Rbx2Source in
 - Restore NuGet Packages for Both repositories
 - Build within Visual Studio Community 2022 (Debug / Release)
 - Some users have experienced issues building versions of VS 2022 other than community.
