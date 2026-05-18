@@ -33,7 +33,7 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - **`LodOffsets` fix** — Post-2023 COREMESH v2 body meshes include a `LODS` chunk that overwrites `LodOffsets` with `[0, 0]` after the `GEOM` chunk set it correctly. `LoadGeometry_Chunks` now guards: if `LodOffsets.Count >= 2 && LodOffsets[1] == 0 && Faces.Count > 0`, it corrects `LodOffsets[1]` to `Faces.Count`. Without this, `BuildAvatarGeometry` adds 0 triangles for all body part materials (Torso, LeftArm, RightArm, LeftLeg, RightLeg).
 - **`FindFirstChildOfClass<T>()`** defaults to `recursive: false` (direct children only). Use `GetDescendantsOfType<T>()` to search the full tree. This matters in `Mesh.BakePart` fallback when a model wraps its `MeshPart` inside folders.
 - **Layered clothing** — explicitly unsupported per README; `LayeredClothingExtractor` exists but is partial/incomplete.
-- **Self-update** — compares local version to GitHub `version.txt` on startup; downloads and renames `NEW_Rbx2Source.exe`.
+- **Self-update** — `Launcher.cs` downloads `version.txt` from `aleksa07/Rbx2Source`, compares to `App.config` `CurrentVersion`, downloads new `Rbx2Source.exe` if different (guarded by `#if !DEBUG`).
 
 ## Upcoming work
 - [ ] Feature: Complete layered clothing extraction (LayeredClothingExtractor partial)
@@ -43,4 +43,6 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 ## Completed
 - [x] Release: Version bumped to 2.9, auto-update restored (aleksa07/Rbx2Source), changelog added
 - [x] Release: README, About section, workflows updated to point to aleksa07
+- [x] Feature: About section — aleksa07 as maintainer (avatar + link), MaximumADHD moved to special thanks as "Original Creator"
+- [x] Bug: About section layout — shifted left contributors down + third-party/VTFCmd down to fix clipping
 
