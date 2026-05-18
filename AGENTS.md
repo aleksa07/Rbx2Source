@@ -45,4 +45,5 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - [x] Release: README, About section, workflows updated to point to aleksa07
 - [x] Feature: About section — aleksa07 as maintainer (avatar + link), MaximumADHD moved to special thanks as "Original Creator"
 - [x] Bug: About section layout — shifted left contributors down + third-party/VTFCmd down to fix clipping
+- [x] Bug: Auto-updater pointed to experimental branch instead of main
 
