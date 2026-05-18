@@ -87,6 +87,7 @@ namespace Rbx2Source
                 }
             }
 
+#if !DEBUG
             setStatus("Checking for updates");
 
             string latestVersion = await GetGitHubString("version.txt");
@@ -105,6 +106,7 @@ namespace Rbx2Source
                 Process.Start(updatePath);
                 Application.Exit();
             }
+#endif
 
             setStatus("Starting Rbx2Source");
             await Task.Delay(500);
