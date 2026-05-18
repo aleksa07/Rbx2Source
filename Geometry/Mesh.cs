@@ -188,54 +188,57 @@ namespace Rbx2Source.Geometry
                             var rawBuffer = reader.ReadBytes(packed);
                             var dracoMesh = Draco.Decode(rawBuffer) as DracoMesh;
 
-                            var attrUVs = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.TexCoord);
-                            var uvSpan = MemoryMarshal.Cast<byte, float>(attrUVs.Buffer.AsSpan());
-
-                            var attrVerts = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.Position);
-                            var vertSpan = MemoryMarshal.Cast<byte, float>(attrVerts.Buffer.AsSpan());
-
-                            var attrNorms = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.Generic);
-                            var normSpan = MemoryMarshal.Cast<byte, float>(attrNorms.Buffer.AsSpan());
-
-                            var attrColors = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.Color);
-                            var colorSpan = attrColors.Buffer.AsSpan();
-
-                            var verts = mesh.Verts;
-                            var faces = mesh.Faces;
-
-                            for (int i = 0; i < dracoMesh.NumPoints; i++)
+                            if (dracoMesh != null)
                             {
-                                int uvId = i * 2;
-                                int posId = i * 3;
+                                var attrUVs = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.TexCoord);
+                                var uvSpan = MemoryMarshal.Cast<byte, float>(attrUVs.Buffer.AsSpan());
 
-                                var posX = vertSpan[posId];
-                                var posY = vertSpan[posId + 1];
-                                var posZ = vertSpan[posId + 2];
+                                var attrVerts = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.Position);
+                                var vertSpan = MemoryMarshal.Cast<byte, float>(attrVerts.Buffer.AsSpan());
 
-                                var normX = normSpan[posId];
-                                var normY = normSpan[posId + 1];
-                                var normZ = normSpan[posId + 2];
+                                var attrNorms = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.Generic);
+                                var normSpan = MemoryMarshal.Cast<byte, float>(attrNorms.Buffer.AsSpan());
 
-                                var uvX = uvSpan[uvId];
-                                var uvY = uvSpan[uvId + 1];
-                                var rgba = colorSpan[i];
+                                var attrColors = dracoMesh.GetNamedAttribute(Openize.Drako.AttributeType.Color);
+                                var colorSpan = attrColors.Buffer.AsSpan();
 
-                                var vert = new Vertex()
+                                var verts = mesh.Verts;
+                                var faces = mesh.Faces;
+
+                                for (int i = 0; i < dracoMesh.NumPoints; i++)
                                 {
-                                    Color = Color.FromArgb(rgba << 24 | rgba >> 8),
-                                    Normal = new Vector3(normX, normY, normZ),
-                                    Position = new Vector3(posX, posY, posZ),
-                                    UV = new Vector2(uvX, uvY),
-                                };
+                                    int uvId = i * 2;
+                                    int posId = i * 3;
 
-                                verts.Add(vert);
-                            }
+                                    var posX = vertSpan[posId];
+                                    var posY = vertSpan[posId + 1];
+                                    var posZ = vertSpan[posId + 2];
 
-                            for (int i = 0; i < dracoMesh.NumFaces; i++)
-                            {
-                                int[] dracoFace = new int[3];
-                                dracoMesh.ReadFace(i, dracoFace);
-                                faces.Add(dracoFace);
+                                    var normX = normSpan[posId];
+                                    var normY = normSpan[posId + 1];
+                                    var normZ = normSpan[posId + 2];
+
+                                    var uvX = uvSpan[uvId];
+                                    var uvY = uvSpan[uvId + 1];
+                                    var rgba = colorSpan[i];
+
+                                    var vert = new Vertex()
+                                    {
+                                        Color = Color.FromArgb(rgba << 24 | rgba >> 8),
+                                        Normal = new Vector3(normX, normY, normZ),
+                                        Position = new Vector3(posX, posY, posZ),
+                                        UV = new Vector2(uvX, uvY),
+                                    };
+
+                                    verts.Add(vert);
+                                }
+
+                                for (int i = 0; i < dracoMesh.NumFaces; i++)
+                                {
+                                    int[] dracoFace = new int[3];
+                                    dracoMesh.ReadFace(i, dracoFace);
+                                    faces.Add(dracoFace);
+                                }
                             }
                         }
                         else
@@ -254,6 +257,7 @@ namespace Rbx2Source.Geometry
                             _ = reader.ReadByte(); // numHighQualityLODs;
 
                             uint numLodOffsets = reader.ReadUInt32();
+
                             mesh.LodOffsets.Clear();
 
                             for (int i = 0; i < numLodOffsets; i++)
@@ -261,6 +265,9 @@ namespace Rbx2Source.Geometry
                                 int lodOffset = reader.ReadInt32();
                                 mesh.LodOffsets.Add(lodOffset);
                             }
+
+                            if (mesh.LodOffsets.Count >= 2 && mesh.LodOffsets[1] == 0 && mesh.Faces.Count > 0)
+                                mesh.LodOffsets[1] = mesh.Faces.Count;
                         }
                         else
                         {
@@ -751,7 +758,11 @@ namespace Rbx2Source.Geometry
                         albedoAsset = Asset.GetByAssetId(meshPart.TextureID);
                     }
 
-                    scale = meshPart.Size / meshPart.InitialSize;
+                    var initialSize = meshPart.InitialSize;
+                    if (initialSize.X == 0 || initialSize.Y == 0 || initialSize.Z == 0)
+                        scale = Vector3.one;
+                    else
+                        scale = meshPart.Size / initialSize;
                     offset = part.CFrame;
                 }
                 else
@@ -801,13 +812,28 @@ namespace Rbx2Source.Geometry
                 try
                 {
                     result = FromAsset(meshAsset);
+
+                    if (result != null && result.Faces.Count == 0)
+                    {
+                        Rbx2Source.Print("Mesh for {0} has 0 faces, treating as failed", part?.Name ?? "?");
+                        result = null;
+                    }
+                    else if (result != null)
+                    {
+                        Rbx2Source.Print("Mesh for {0} loaded OK: {1} faces, {2} verts", part?.Name ?? "?", result.Faces.Count, result.Verts.Count);
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Rbx2Source.Print("FromAsset failed for {0}: {1}", part?.Name ?? "?", ex.Message);
+                    result = null;
+                }
+
+                if (result == null)
+                {
+                    Rbx2Source.Print("Trying OpenAsModel fallback for {0}...", part?.Name ?? "?");
                     try
                     {
-                        // Not a .mesh file — try opening as a Roblox model
-                        // and look for a MeshPart or SpecialMesh inside.
                         var import = meshAsset.OpenAsModel();
                         var meshParts = import.GetDescendantsOfType<MeshPart>();
                         var meshPart = meshParts.FirstOrDefault();
@@ -816,9 +842,12 @@ namespace Rbx2Source.Geometry
 
                         if (innerId != null && innerId.Length > 0)
                         {
-                            result = FromAsset(Asset.GetByAssetId(innerId));
+                            var innerResult = FromAsset(Asset.GetByAssetId(innerId));
+                            if (innerResult != null && innerResult.Faces.Count > 0)
+                                result = innerResult;
                         }
-                        else
+
+                        if (result == null)
                         {
                             var specialMeshs = import.GetDescendantsOfType<SpecialMesh>();
                             var specialMesh = specialMeshs.FirstOrDefault();
@@ -828,32 +857,69 @@ namespace Rbx2Source.Geometry
                                 innerId = specialMesh.MeshId;
 
                                 if (innerId != null && innerId.Length > 0)
-                                    result = FromAsset(Asset.GetByAssetId(innerId));
+                                {
+                                    var innerResult = FromAsset(Asset.GetByAssetId(innerId));
+                                    if (innerResult != null && innerResult.Faces.Count > 0)
+                                        result = innerResult;
+                                }
                             }
                         }
+
+                        if (result != null)
+                            Rbx2Source.Print("OpenAsModel fallback worked for {0}", part?.Name ?? "?");
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Could not load geometry from any format.
+                        Rbx2Source.Print("OpenAsModel fallback failed for {0}: {1}", part?.Name ?? "?", ex.Message);
                     }
                 }
 
                 if (result == null)
                 {
-                    // Dynamic/legacy heads may use a mesh format we can't parse;
-                    // fall back to the default head mesh template.
+                    Rbx2Source.Print("Trying StandardLimbs fallback for {0}...", part?.Name ?? "?");
                     if (part != null)
                     {
                         BodyPart? limb = CharacterAssembler.GetLimb(part);
-                        if (limb == BodyPart.Head)
+                        if (limb.HasValue)
                         {
-                            Asset defaultHead = Asset.FromResource("Meshes/Heads/Default.mesh");
-                            try { result = FromAsset(defaultHead); } catch { }
+                            string stdKey = null;
+                            switch (limb.Value)
+                            {
+                                case BodyPart.Head:
+                                    Rbx2Source.Print("Falling back to Default.mesh for {0}", part.Name);
+                                    Asset defaultHead = Asset.FromResource("Meshes/Heads/Default.mesh");
+                                    try { result = FromAsset(defaultHead); if (result != null) Rbx2Source.Print("Default.mesh loaded: {0} faces", result.Faces.Count); } catch { }
+                                    break;
+                                case BodyPart.Torso:    stdKey = "Torso";     break;
+                                case BodyPart.LeftArm:  stdKey = "Left Arm";  break;
+                                case BodyPart.RightArm: stdKey = "Right Arm"; break;
+                                case BodyPart.LeftLeg:  stdKey = "Left Leg";  break;
+                                case BodyPart.RightLeg: stdKey = "Right Leg"; break;
+                            }
+
+                            if (stdKey != null && StandardLimbs.TryGetValue(stdKey, out Asset stdAsset))
+                            {
+                                Rbx2Source.Print("Loading StandardLimb '{0}' for {1}", stdKey, part.Name);
+                                try { result = FromAsset(stdAsset); if (result != null) Rbx2Source.Print("StandardLimb loaded: {0} faces", result.Faces.Count); } catch (Exception ex) { Rbx2Source.Print("StandardLimb failed: {0}", ex.Message); }
+                            }
                         }
                     }
 
                     if (result == null)
+                    {
+                        Rbx2Source.Print("All fallbacks failed for {0}, using blank mesh", part?.Name ?? "?");
                         result = new Mesh();
+                    }
+                }
+
+                if (result != null && scale != null)
+                {
+                    Rbx2Source.Print("{0} scale: ({1}, {2}, {3})", part?.Name ?? "?", scale.X.ToInvariantString(), scale.Y.ToInvariantString(), scale.Z.ToInvariantString());
+                    if (result.Verts.Count > 0)
+                    {
+                        var firstPos = result.Verts[0].Position;
+                        Rbx2Source.Print("{0} first vert before bake: ({1}, {2}, {3})", part?.Name ?? "?", firstPos.X.ToInvariantString(), firstPos.Y.ToInvariantString(), firstPos.Z.ToInvariantString());
+                    }
                 }
 
                 if (MorphObjs.ContainsKey(meshAsset.Id))
@@ -861,6 +927,12 @@ namespace Rbx2Source.Geometry
 
                 if (result != null)
                     result.BakeGeometry(scale, offset);
+
+                if (result != null && result.Verts.Count > 0)
+                {
+                    var firstPos = result.Verts[0].Position;
+                    Rbx2Source.Print("{0} first vert after bake: ({1}, {2}, {3})", part?.Name ?? "?", firstPos.X.ToInvariantString(), firstPos.Y.ToInvariantString(), firstPos.Z.ToInvariantString());
+                }
             }
 
             return result;
