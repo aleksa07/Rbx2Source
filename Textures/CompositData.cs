@@ -63,6 +63,9 @@ namespace Rbx2Source.Textures
 
         public void SetDrawColor(string hex)
         {
+            if (string.IsNullOrWhiteSpace(hex) || hex.Length < 2)
+                hex = "F2F2F2";
+
             if (hex.Substring(0, 1) == "#")
                 hex = hex.Substring(2);
 

@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Rbx2Source.Resources;
+using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -8,6 +11,8 @@ namespace Rbx2Source
 {
     public partial class Launcher : Form
     {
+        private readonly WebClient http = new WebClient();
+
         public Launcher()
         {
             InitializeComponent();
@@ -17,6 +22,26 @@ namespace Rbx2Source
         {
             statusLbl.Text = status + "...";
             statusLbl.Refresh();
+        }
+
+        public async Task<byte[]> GetGitHubFile(string localPath)
+        {
+            if (Environment.CurrentDirectory.Contains(@"Rbx2Source\bin"))
+            {
+                string path = Path.Combine(Environment.CurrentDirectory, @"..\..", localPath);
+                return File.ReadAllBytes(path);
+            }
+            else
+            {
+                string gitPath = "https://raw.githubusercontent.com/aleksa07/Rbx2Source/main/" + localPath;
+                return await http.DownloadDataTaskAsync(gitPath);
+            }
+        }
+
+        public async Task<string> GetGitHubString(string localPath)
+        {
+            byte[] contents = await GetGitHubFile(localPath);
+            return Encoding.UTF8.GetString(contents);
         }
 
         private async void Launcher_Load(object sender, EventArgs e)
@@ -60,6 +85,25 @@ namespace Rbx2Source
                         break;
                     }
                 }
+            }
+
+            setStatus("Checking for updates");
+
+            string latestVersion = await GetGitHubString("version.txt");
+            string myVersion = Settings.GetString("CurrentVersion");
+
+            if (latestVersion != myVersion)
+            {
+                setStatus("Updating Rbx2Source to ver. " + latestVersion);
+
+                byte[] newVersion = await GetGitHubFile("Rbx2Source.exe");
+                string updatePath = Path.Combine(dir, "NEW_" + myName);
+
+                File.WriteAllBytes(updatePath, newVersion);
+                Settings.SaveSetting("CurrentVersion", latestVersion);
+
+                Process.Start(updatePath);
+                Application.Exit();
             }
 
             setStatus("Starting Rbx2Source");

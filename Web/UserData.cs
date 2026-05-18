@@ -159,9 +159,70 @@ namespace Rbx2Source.Web
             var requestBody = request.ToString();
 
             var userInfos = WebUtil.DownloadJSON<UserInfos>("https://users.roblox.com/v1/usernames/users", "POST", requestBody);
-            var userInfo = userInfos.Data[0];
 
+            if (userInfos.Data == null || userInfos.Data.Length == 0)
+                return new UserAvatar() { UserExists = false };
+
+            var userInfo = userInfos.Data[0];
             return CreateUserAvatar(userInfo);
         }
+
+        public static UserAvatar FromOutfitId(long outfitId)
+        {
+            var outfit = WebUtil.DownloadJSON<OutfitDetails>($"https://avatar.roblox.com/v1/outfits/{outfitId}/details");
+
+            if (string.IsNullOrWhiteSpace(outfit.Name))
+                return new UserAvatar() { UserExists = false };
+
+            var info = new UserInfo
+            {
+                Id = outfitId,
+                Name = outfit.Name,
+                DisplayName = outfit.Name,
+            };
+
+            var bodyColors = outfit.BodyColors;
+            if (string.IsNullOrWhiteSpace(bodyColors.HeadColor3))
+                bodyColors.HeadColor3 = "F2F2F2";
+            if (string.IsNullOrWhiteSpace(bodyColors.TorsoColor3))
+                bodyColors.TorsoColor3 = "F2F2F2";
+            if (string.IsNullOrWhiteSpace(bodyColors.LeftArmColor3))
+                bodyColors.LeftArmColor3 = "F2F2F2";
+            if (string.IsNullOrWhiteSpace(bodyColors.RightArmColor3))
+                bodyColors.RightArmColor3 = "F2F2F2";
+            if (string.IsNullOrWhiteSpace(bodyColors.LeftLegColor3))
+                bodyColors.LeftLegColor3 = "C3C3C3";
+            if (string.IsNullOrWhiteSpace(bodyColors.RightLegColor3))
+                bodyColors.RightLegColor3 = "C3C3C3";
+
+            var avatar = new UserAvatar
+            {
+                UserExists = true,
+                UserInfo = info,
+                PlayerAvatarType = outfit.PlayerAvatarType,
+                BodyColor3s = bodyColors,
+                Assets = outfit.Assets,
+                Scales = new AvatarScale
+                {
+                    Width = 1,
+                    Height = 1,
+                    Head = 1,
+                    Depth = 1,
+                    Proportion = 0,
+                    BodyType = 0,
+                },
+            };
+
+            return avatar;
+        }
+    }
+
+    public class OutfitDetails
+    {
+        public long Id;
+        public string Name;
+        public AssetInfo[] Assets;
+        public AvatarBodyColors BodyColors;
+        public AvatarType PlayerAvatarType;
     }
 }

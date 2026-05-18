@@ -34,6 +34,8 @@
             this.timelesslabel = new System.Windows.Forms.Label();
             this.timelessLink = new System.Windows.Forms.LinkLabel();
             this.TimelessIcon = new System.Windows.Forms.PictureBox();
+            this.maintainedBy = new System.Windows.Forms.Label();
+            this.maintainerLink = new System.Windows.Forms.LinkLabel();
             this.nemsTools = new System.Windows.Forms.LinkLabel();
             this.rileyLabel = new System.Windows.Forms.Label();
             this.rileyLink = new System.Windows.Forms.LinkLabel();
@@ -73,6 +75,8 @@
             this.assetPreview = new System.Windows.Forms.PictureBox();
             this.compilerType = new System.Windows.Forms.Label();
             this.compilerTypeSelect = new System.Windows.Forms.ComboBox();
+            this.modelNameLabel = new System.Windows.Forms.Label();
+            this.modelNameField = new System.Windows.Forms.TextBox();
             this.MainTab = new System.Windows.Forms.TabControl();
             this.ChangeLog = new System.Windows.Forms.TabPage();
             this.changeLogBox = new System.Windows.Forms.RichTextBox();
@@ -104,6 +108,8 @@
             this.About.Controls.Add(this.timelesslabel);
             this.About.Controls.Add(this.timelessLink);
             this.About.Controls.Add(this.TimelessIcon);
+            this.About.Controls.Add(this.maintainedBy);
+            this.About.Controls.Add(this.maintainerLink);
             this.About.Controls.Add(this.nemsTools);
             this.About.Controls.Add(this.rileyLabel);
             this.About.Controls.Add(this.rileyLink);
@@ -177,6 +183,29 @@
             this.TimelessIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.TimelessIcon.TabIndex = 25;
             this.TimelessIcon.TabStop = false;
+            // 
+            // maintainedBy
+            // 
+            this.maintainedBy.AutoSize = true;
+            this.maintainedBy.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.77165F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.maintainedBy.Location = new System.Drawing.Point(5, 456);
+            this.maintainedBy.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.maintainedBy.Name = "maintainedBy";
+            this.maintainedBy.Size = new System.Drawing.Size(94, 18);
+            this.maintainedBy.TabIndex = 25;
+            this.maintainedBy.Text = "Maintained by:";
+            // 
+            // maintainerLink
+            // 
+            this.maintainerLink.AutoSize = true;
+            this.maintainerLink.LinkBehavior = System.Windows.Forms.LinkBehavior.NeverUnderline;
+            this.maintainerLink.Location = new System.Drawing.Point(99, 457);
+            this.maintainerLink.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.maintainerLink.Name = "maintainerLink";
+            this.maintainerLink.Size = new System.Drawing.Size(50, 13);
+            this.maintainerLink.TabIndex = 26;
+            this.maintainerLink.TabStop = true;
+            this.maintainerLink.Text = "aleksa07";
             // 
             // nemsTools
             // 
@@ -415,7 +444,7 @@
             this.rbx2SourceLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.rbx2SourceLogo.TabIndex = 0;
             this.rbx2SourceLogo.TabStop = false;
-            // 
+            //
             // Compiler
             // 
             this.Compiler.Controls.Add(this.useExistingObj);
@@ -429,6 +458,8 @@
             this.Compiler.Controls.Add(this.viewCompiledModel);
             this.Compiler.Controls.Add(this.outputHeader);
             this.Compiler.Controls.Add(this.output);
+            this.Compiler.Controls.Add(this.modelNameField);
+            this.Compiler.Controls.Add(this.modelNameLabel);
             this.Compiler.Controls.Add(this.compilerInputField);
             this.Compiler.Controls.Add(this.compile);
             this.Compiler.Controls.Add(this.compilerInput);
@@ -544,7 +575,7 @@
             // output
             // 
             this.output.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.output.Location = new System.Drawing.Point(8, 122);
+            this.output.Location = new System.Drawing.Point(8, 135);
             this.output.Margin = new System.Windows.Forms.Padding(2);
             this.output.Name = "output";
             this.output.ReadOnly = true;
@@ -567,7 +598,7 @@
             // 
             // compile
             // 
-            this.compile.Location = new System.Drawing.Point(238, 71);
+            this.compile.Location = new System.Drawing.Point(238, 112);
             this.compile.Margin = new System.Windows.Forms.Padding(2);
             this.compile.Name = "compile";
             this.compile.Size = new System.Drawing.Size(108, 20);
@@ -575,6 +606,24 @@
             this.compile.Text = "Compile";
             this.compile.UseVisualStyleBackColor = true;
             this.compile.Click += new System.EventHandler(this.compile_Click);
+            // 
+            // modelNameLabel
+            // 
+            this.modelNameLabel.AutoSize = true;
+            this.modelNameLabel.Location = new System.Drawing.Point(236, 70);
+            this.modelNameLabel.Name = "modelNameLabel";
+            this.modelNameLabel.Size = new System.Drawing.Size(71, 13);
+            this.modelNameLabel.TabIndex = 22;
+            this.modelNameLabel.Text = "Model Name:";
+            // 
+            // modelNameField
+            //
+            this.modelNameField.Location = new System.Drawing.Point(238, 88);
+            this.modelNameField.Margin = new System.Windows.Forms.Padding(2);
+            this.modelNameField.Name = "modelNameField";
+            this.modelNameField.Size = new System.Drawing.Size(108, 20);
+            this.modelNameField.TabIndex = 23;
+            this.modelNameField.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             // 
             // compilerInput
             // 
@@ -734,7 +783,7 @@
             this.MaximizeBox = false;
             this.Name = "Rbx2Source";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Rbx2Source v2.71.1";
+            this.Text = "Rbx2Source v2.9";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Rbx2Source_FormClosed);
             this.Load += new System.EventHandler(this.Rbx2Source_Load);
             this.About.ResumeLayout(false);
@@ -811,5 +860,9 @@
         private System.Windows.Forms.Label apiKeyTitle;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox useExistingObj;
+        private System.Windows.Forms.Label modelNameLabel;
+        private System.Windows.Forms.TextBox modelNameField;
+        private System.Windows.Forms.Label maintainedBy;
+        private System.Windows.Forms.LinkLabel maintainerLink;
     }
 }
