@@ -875,7 +875,7 @@ namespace Rbx2Source
             Links = new Dictionary<Control, string>()
             {
                 {cloneTwitter,  "https://www.github.com/aleksa07"},
-                {maintainerLink, "https://www.github.com/aleksa07"},
+                {originalCreatorLink, "https://www.github.com/MaximumADHD"},
                 {qfoxb,         "https://www.github.com/qfoxb"},
                 {AJLink,        "https://www.github.com/RedTopper"},
                 {egoMooseLink,  "https://www.github.com/EgoMoose"},

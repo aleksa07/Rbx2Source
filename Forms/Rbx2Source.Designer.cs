@@ -34,8 +34,6 @@
             this.timelesslabel = new System.Windows.Forms.Label();
             this.timelessLink = new System.Windows.Forms.LinkLabel();
             this.TimelessIcon = new System.Windows.Forms.PictureBox();
-            this.maintainedBy = new System.Windows.Forms.Label();
-            this.maintainerLink = new System.Windows.Forms.LinkLabel();
             this.nemsTools = new System.Windows.Forms.LinkLabel();
             this.rileyLabel = new System.Windows.Forms.Label();
             this.rileyLink = new System.Windows.Forms.LinkLabel();
@@ -50,6 +48,9 @@
             this.egoMooseLink = new System.Windows.Forms.LinkLabel();
             this.AJContribution = new System.Windows.Forms.Label();
             this.AJLink = new System.Windows.Forms.LinkLabel();
+            this.originalCreatorIcon = new System.Windows.Forms.PictureBox();
+            this.originalCreatorLink = new System.Windows.Forms.LinkLabel();
+            this.originalCreatorLabel = new System.Windows.Forms.Label();
             this.specialThanksTo = new System.Windows.Forms.Label();
             this.qfoxb = new System.Windows.Forms.LinkLabel();
             this.egoMooseIcon = new System.Windows.Forms.PictureBox();
@@ -89,6 +90,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.egoMooseIcon)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.AJIcon)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.originalCreatorIcon)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TwitterIcon)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.rbx2SourceLogo)).BeginInit();
             this.Compiler.SuspendLayout();
@@ -108,8 +110,6 @@
             this.About.Controls.Add(this.timelesslabel);
             this.About.Controls.Add(this.timelessLink);
             this.About.Controls.Add(this.TimelessIcon);
-            this.About.Controls.Add(this.maintainedBy);
-            this.About.Controls.Add(this.maintainerLink);
             this.About.Controls.Add(this.nemsTools);
             this.About.Controls.Add(this.rileyLabel);
             this.About.Controls.Add(this.rileyLink);
@@ -126,6 +126,9 @@
             this.About.Controls.Add(this.AJLink);
             this.About.Controls.Add(this.specialThanksTo);
             this.About.Controls.Add(this.qfoxb);
+            this.About.Controls.Add(this.originalCreatorIcon);
+            this.About.Controls.Add(this.originalCreatorLink);
+            this.About.Controls.Add(this.originalCreatorLabel);
             this.About.Controls.Add(this.egoMooseIcon);
             this.About.Controls.Add(this.AJIcon);
             this.About.Controls.Add(this.TwitterIcon);
@@ -142,7 +145,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.236221F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(52, 257);
+            this.label1.Location = new System.Drawing.Point(52, 292);
             this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(107, 24);
@@ -153,7 +156,7 @@
             // 
             this.timelesslabel.AutoSize = true;
             this.timelesslabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.236221F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.timelesslabel.Location = new System.Drawing.Point(205, 254);
+            this.timelesslabel.Location = new System.Drawing.Point(205, 289);
             this.timelesslabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.timelesslabel.Name = "timelesslabel";
             this.timelesslabel.Size = new System.Drawing.Size(102, 12);
@@ -163,7 +166,7 @@
             // timelessLink
             // 
             this.timelessLink.AutoSize = true;
-            this.timelessLink.Location = new System.Drawing.Point(205, 241);
+            this.timelessLink.Location = new System.Drawing.Point(205, 276);
             this.timelessLink.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.timelessLink.Name = "timelessLink";
             this.timelessLink.Size = new System.Drawing.Size(77, 13);
@@ -176,7 +179,7 @@
             this.TimelessIcon.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.TimelessIcon.ImageLocation = "https://github.com/timelessnesses.png";
             this.TimelessIcon.InitialImage = global::Rbx2Source.Properties.Resources.Loading;
-            this.TimelessIcon.Location = new System.Drawing.Point(163, 241);
+            this.TimelessIcon.Location = new System.Drawing.Point(163, 276);
             this.TimelessIcon.Margin = new System.Windows.Forms.Padding(2);
             this.TimelessIcon.Name = "TimelessIcon";
             this.TimelessIcon.Size = new System.Drawing.Size(38, 40);
@@ -184,35 +187,12 @@
             this.TimelessIcon.TabIndex = 25;
             this.TimelessIcon.TabStop = false;
             // 
-            // maintainedBy
-            // 
-            this.maintainedBy.AutoSize = true;
-            this.maintainedBy.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.77165F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.maintainedBy.Location = new System.Drawing.Point(5, 456);
-            this.maintainedBy.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.maintainedBy.Name = "maintainedBy";
-            this.maintainedBy.Size = new System.Drawing.Size(94, 18);
-            this.maintainedBy.TabIndex = 25;
-            this.maintainedBy.Text = "Maintained by:";
-            // 
-            // maintainerLink
-            // 
-            this.maintainerLink.AutoSize = true;
-            this.maintainerLink.LinkBehavior = System.Windows.Forms.LinkBehavior.NeverUnderline;
-            this.maintainerLink.Location = new System.Drawing.Point(99, 457);
-            this.maintainerLink.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.maintainerLink.Name = "maintainerLink";
-            this.maintainerLink.Size = new System.Drawing.Size(50, 13);
-            this.maintainerLink.TabIndex = 26;
-            this.maintainerLink.TabStop = true;
-            this.maintainerLink.Text = "aleksa07";
-            // 
             // nemsTools
             // 
             this.nemsTools.AutoSize = true;
             this.nemsTools.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.20472F, System.Drawing.FontStyle.Bold);
             this.nemsTools.LinkBehavior = System.Windows.Forms.LinkBehavior.NeverUnderline;
-            this.nemsTools.Location = new System.Drawing.Point(7, 384);
+            this.nemsTools.Location = new System.Drawing.Point(7, 414);
             this.nemsTools.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.nemsTools.Name = "nemsTools";
             this.nemsTools.Size = new System.Drawing.Size(68, 17);
@@ -224,7 +204,7 @@
             // 
             this.rileyLabel.AutoSize = true;
             this.rileyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.236221F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rileyLabel.Location = new System.Drawing.Point(49, 304);
+            this.rileyLabel.Location = new System.Drawing.Point(49, 339);
             this.rileyLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.rileyLabel.Name = "rileyLabel";
             this.rileyLabel.Size = new System.Drawing.Size(154, 12);
@@ -234,7 +214,7 @@
             // rileyLink
             // 
             this.rileyLink.AutoSize = true;
-            this.rileyLink.Location = new System.Drawing.Point(49, 291);
+            this.rileyLink.Location = new System.Drawing.Point(49, 326);
             this.rileyLink.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.rileyLink.Name = "rileyLink";
             this.rileyLink.Size = new System.Drawing.Size(43, 13);
@@ -247,7 +227,7 @@
             this.RileyIcon.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.RileyIcon.ImageLocation = "https://github.com/rilinium.png";
             this.RileyIcon.InitialImage = global::Rbx2Source.Properties.Resources.Loading;
-            this.RileyIcon.Location = new System.Drawing.Point(10, 288);
+            this.RileyIcon.Location = new System.Drawing.Point(10, 323);
             this.RileyIcon.Margin = new System.Windows.Forms.Padding(2);
             this.RileyIcon.Name = "RileyIcon";
             this.RileyIcon.Size = new System.Drawing.Size(38, 40);
@@ -262,10 +242,10 @@
             this.cloneTwitter.Location = new System.Drawing.Point(7, 213);
             this.cloneTwitter.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.cloneTwitter.Name = "cloneTwitter";
-            this.cloneTwitter.Size = new System.Drawing.Size(82, 13);
+            this.cloneTwitter.Size = new System.Drawing.Size(50, 13);
             this.cloneTwitter.TabIndex = 20;
             this.cloneTwitter.TabStop = true;
-            this.cloneTwitter.Text = "MaximumADHD";
+            this.cloneTwitter.Text = "aleksa07";
             // 
             // developedBy
             // 
@@ -276,12 +256,12 @@
             this.developedBy.Name = "developedBy";
             this.developedBy.Size = new System.Drawing.Size(99, 17);
             this.developedBy.TabIndex = 19;
-            this.developedBy.Text = "Developed by:";
+            this.developedBy.Text = "Maintained by:";
             // 
             // pictureBox1
             // 
             this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.pictureBox1.ImageLocation = "https://github.com/MaximumADHD.png";
+            this.pictureBox1.ImageLocation = "https://github.com/aleksa07.png";
             this.pictureBox1.InitialImage = global::Rbx2Source.Properties.Resources.Loading;
             this.pictureBox1.Location = new System.Drawing.Point(8, 129);
             this.pictureBox1.Margin = new System.Windows.Forms.Padding(2);
@@ -293,7 +273,7 @@
             // 
             // textBox3
             // 
-            this.textBox3.Location = new System.Drawing.Point(10, 403);
+            this.textBox3.Location = new System.Drawing.Point(10, 433);
             this.textBox3.Margin = new System.Windows.Forms.Padding(2);
             this.textBox3.Multiline = true;
             this.textBox3.Name = "textBox3";
@@ -308,7 +288,7 @@
             // 
             this.thirdPartyInfoElaboration.AutoSize = true;
             this.thirdPartyInfoElaboration.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.236221F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.thirdPartyInfoElaboration.Location = new System.Drawing.Point(6, 356);
+            this.thirdPartyInfoElaboration.Location = new System.Drawing.Point(6, 386);
             this.thirdPartyInfoElaboration.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.thirdPartyInfoElaboration.Name = "thirdPartyInfoElaboration";
             this.thirdPartyInfoElaboration.Size = new System.Drawing.Size(213, 24);
@@ -320,7 +300,7 @@
             // 
             this.thirdPartyInfo.AutoSize = true;
             this.thirdPartyInfo.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.77165F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.thirdPartyInfo.Location = new System.Drawing.Point(2, 336);
+            this.thirdPartyInfo.Location = new System.Drawing.Point(2, 366);
             this.thirdPartyInfo.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.thirdPartyInfo.Name = "thirdPartyInfo";
             this.thirdPartyInfo.Size = new System.Drawing.Size(158, 18);
@@ -331,7 +311,7 @@
             // 
             this.egoMooseContribution.AutoSize = true;
             this.egoMooseContribution.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.236221F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.egoMooseContribution.Location = new System.Drawing.Point(143, 193);
+            this.egoMooseContribution.Location = new System.Drawing.Point(163, 239);
             this.egoMooseContribution.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.egoMooseContribution.Name = "egoMooseContribution";
             this.egoMooseContribution.Size = new System.Drawing.Size(149, 36);
@@ -341,7 +321,7 @@
             // egoMooseLink
             // 
             this.egoMooseLink.AutoSize = true;
-            this.egoMooseLink.Location = new System.Drawing.Point(143, 180);
+            this.egoMooseLink.Location = new System.Drawing.Point(163, 225);
             this.egoMooseLink.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.egoMooseLink.Name = "egoMooseLink";
             this.egoMooseLink.Size = new System.Drawing.Size(58, 13);
@@ -353,7 +333,7 @@
             // 
             this.AJContribution.AutoSize = true;
             this.AJContribution.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.236221F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.AJContribution.Location = new System.Drawing.Point(143, 149);
+            this.AJContribution.Location = new System.Drawing.Point(163, 194);
             this.AJContribution.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.AJContribution.Name = "AJContribution";
             this.AJContribution.Size = new System.Drawing.Size(159, 24);
@@ -363,7 +343,7 @@
             // AJLink
             // 
             this.AJLink.AutoSize = true;
-            this.AJLink.Location = new System.Drawing.Point(143, 135);
+            this.AJLink.Location = new System.Drawing.Point(163, 180);
             this.AJLink.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.AJLink.Name = "AJLink";
             this.AJLink.Size = new System.Drawing.Size(116, 13);
@@ -371,11 +351,46 @@
             this.AJLink.TabStop = true;
             this.AJLink.Text = "RedTopper (AJ Walter)";
             // 
+            // originalCreatorIcon
+            // 
+            this.originalCreatorIcon.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.originalCreatorIcon.ImageLocation = "https://github.com/MaximumADHD.png";
+            this.originalCreatorIcon.InitialImage = global::Rbx2Source.Properties.Resources.Loading;
+            this.originalCreatorIcon.Location = new System.Drawing.Point(124, 135);
+            this.originalCreatorIcon.Margin = new System.Windows.Forms.Padding(2);
+            this.originalCreatorIcon.Name = "originalCreatorIcon";
+            this.originalCreatorIcon.Size = new System.Drawing.Size(38, 41);
+            this.originalCreatorIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.originalCreatorIcon.TabIndex = 27;
+            this.originalCreatorIcon.TabStop = false;
+            // 
+            // originalCreatorLink
+            // 
+            this.originalCreatorLink.AutoSize = true;
+            this.originalCreatorLink.Location = new System.Drawing.Point(163, 135);
+            this.originalCreatorLink.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.originalCreatorLink.Name = "originalCreatorLink";
+            this.originalCreatorLink.Size = new System.Drawing.Size(82, 13);
+            this.originalCreatorLink.TabIndex = 28;
+            this.originalCreatorLink.TabStop = true;
+            this.originalCreatorLink.Text = "MaximumADHD";
+            // 
+            // originalCreatorLabel
+            // 
+            this.originalCreatorLabel.AutoSize = true;
+            this.originalCreatorLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.236221F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.originalCreatorLabel.Location = new System.Drawing.Point(163, 150);
+            this.originalCreatorLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.originalCreatorLabel.Name = "originalCreatorLabel";
+            this.originalCreatorLabel.Size = new System.Drawing.Size(75, 12);
+            this.originalCreatorLabel.TabIndex = 29;
+            this.originalCreatorLabel.Text = "Original Creator";
+            // 
             // specialThanksTo
             // 
             this.specialThanksTo.AutoSize = true;
             this.specialThanksTo.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.77165F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.specialThanksTo.Location = new System.Drawing.Point(98, 116);
+            this.specialThanksTo.Location = new System.Drawing.Point(118, 116);
             this.specialThanksTo.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.specialThanksTo.Name = "specialThanksTo";
             this.specialThanksTo.Size = new System.Drawing.Size(125, 18);
@@ -386,7 +401,7 @@
             // 
             this.qfoxb.AutoSize = true;
             this.qfoxb.LinkBehavior = System.Windows.Forms.LinkBehavior.NeverUnderline;
-            this.qfoxb.Location = new System.Drawing.Point(51, 244);
+            this.qfoxb.Location = new System.Drawing.Point(51, 279);
             this.qfoxb.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.qfoxb.Name = "qfoxb";
             this.qfoxb.Size = new System.Drawing.Size(44, 13);
@@ -399,7 +414,7 @@
             this.egoMooseIcon.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.egoMooseIcon.ImageLocation = "https://github.com/EgoMoose.png";
             this.egoMooseIcon.InitialImage = global::Rbx2Source.Properties.Resources.Loading;
-            this.egoMooseIcon.Location = new System.Drawing.Point(104, 180);
+            this.egoMooseIcon.Location = new System.Drawing.Point(124, 225);
             this.egoMooseIcon.Margin = new System.Windows.Forms.Padding(2);
             this.egoMooseIcon.Name = "egoMooseIcon";
             this.egoMooseIcon.Size = new System.Drawing.Size(38, 41);
@@ -412,7 +427,7 @@
             this.AJIcon.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.AJIcon.ImageLocation = "https://github.com/RedTopper.png";
             this.AJIcon.InitialImage = global::Rbx2Source.Properties.Resources.Loading;
-            this.AJIcon.Location = new System.Drawing.Point(104, 135);
+            this.AJIcon.Location = new System.Drawing.Point(124, 180);
             this.AJIcon.Margin = new System.Windows.Forms.Padding(2);
             this.AJIcon.Name = "AJIcon";
             this.AJIcon.Size = new System.Drawing.Size(38, 41);
@@ -425,7 +440,7 @@
             this.TwitterIcon.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.TwitterIcon.ImageLocation = "https://github.com/qfoxb.png";
             this.TwitterIcon.InitialImage = global::Rbx2Source.Properties.Resources.Loading;
-            this.TwitterIcon.Location = new System.Drawing.Point(10, 244);
+            this.TwitterIcon.Location = new System.Drawing.Point(10, 279);
             this.TwitterIcon.Margin = new System.Windows.Forms.Padding(2);
             this.TwitterIcon.Name = "TwitterIcon";
             this.TwitterIcon.Size = new System.Drawing.Size(38, 40);
@@ -793,6 +808,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.egoMooseIcon)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.AJIcon)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.originalCreatorIcon)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.TwitterIcon)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.rbx2SourceLogo)).EndInit();
             this.Compiler.ResumeLayout(false);
@@ -862,7 +878,8 @@
         private System.Windows.Forms.CheckBox useExistingObj;
         private System.Windows.Forms.Label modelNameLabel;
         private System.Windows.Forms.TextBox modelNameField;
-        private System.Windows.Forms.Label maintainedBy;
-        private System.Windows.Forms.LinkLabel maintainerLink;
+        private System.Windows.Forms.PictureBox originalCreatorIcon;
+        private System.Windows.Forms.LinkLabel originalCreatorLink;
+        private System.Windows.Forms.Label originalCreatorLabel;
     }
 }
