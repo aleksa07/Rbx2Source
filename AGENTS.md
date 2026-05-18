@@ -55,6 +55,7 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - [x] Bug: compilerInputField_Leave uses try-finally to always re-enable controls
 - [x] Bug: Post-2023 COREMESH v2 body meshes producing zero triangles fixed (LODS chunk guard)
 - [x] Enhancement: Triangle-count logging in BuildAvatarGeometry and AssembleModel
-- [x] Enhancement: Auto-update guarded with #if !DEBUG (skipped in Debug builds)
-- [x] Bug: Auto-update loop fixed — added Settings.Save() after updating CurrentVersion
+- [x] Enhancement: Auto-update replaced with popup prompt (MessageBox Yes/No -> opens release page)
+- [x] Bug: Auto-update loop fixed — added Settings.Save() after updating CurrentVersion (later scrapped in favor of popup)
+- [x] Cleanup: version.txt removed from release assets
 

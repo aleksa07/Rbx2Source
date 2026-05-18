@@ -90,22 +90,30 @@ namespace Rbx2Source
 #if !DEBUG
             setStatus("Checking for updates");
 
-            string latestVersion = await GetGitHubString("version.txt");
-            string myVersion = Settings.GetString("CurrentVersion");
-
-            if (latestVersion != myVersion)
+            try
             {
-                setStatus("Updating Rbx2Source to ver. " + latestVersion);
+                string latestVersion = await GetGitHubString("version.txt");
+                string myVersion = Settings.GetString("CurrentVersion");
 
-                byte[] newVersion = await GetGitHubFile("Rbx2Source.exe");
-                string updatePath = Path.Combine(dir, "NEW_" + myName);
+                if (latestVersion != myVersion)
+                {
+                    setStatus("Update available");
 
-                File.WriteAllBytes(updatePath, newVersion);
-                Settings.SaveSetting("CurrentVersion", latestVersion);
-                Settings.Save();
+                    DialogResult result = MessageBox.Show(
+                        "A new version of Rbx2Source is available (v" + latestVersion + ").\n\nWould you like to download it?",
+                        "Update Available",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Information);
 
-                Process.Start(updatePath);
-                Application.Exit();
+                    if (result == DialogResult.Yes)
+                    {
+                        Process.Start("https://github.com/aleksa07/Rbx2Source/releases/latest");
+                    }
+                }
+            }
+            catch
+            {
+                // Update check failed silently — continue startup
             }
 #endif
 

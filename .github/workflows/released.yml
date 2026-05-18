@@ -70,7 +70,6 @@ jobs:
             ${{ steps.changelog.outputs.log }}
           files: |
             bin/Release/Rbx2Source.exe
-            version.txt
           draft: false
           prerelease: false
         env:
