@@ -24,6 +24,7 @@ namespace Rbx2Source.Assembler
     public class CharacterAssembler : IAssembler<UserAvatar>
     {
         public static bool DEBUG_RAPID_ASSEMBLY = false;
+        public string CustomModelName { get; set; }
         private const float DEG2RAD = (float)Math.PI / 180f;
 
         public static BodyPart? GetLimb(BasePart part)
@@ -512,7 +513,10 @@ namespace Rbx2Source.Assembler
             else
                 assembler = new R6CharacterAssembler();
 
-            string compileDir = "roblox_avatars/" + userName;
+            string modelNameSafe = FileUtility.MakeNameWindowsSafe(CustomModelName);
+            string compileDir = string.IsNullOrWhiteSpace(CustomModelName)
+                ? "roblox_avatars/" + userName
+                : "roblox_avatars/" + modelNameSafe;
 
             string avatarTypeName = Rbx2Source.GetEnumName(avatarType);
             Folder characterAssets = AppendCharacterAssets(avatar, avatarTypeName);

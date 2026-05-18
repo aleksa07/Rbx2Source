@@ -40,6 +40,8 @@ namespace Rbx2Source
         public Launcher baseProcess;
 
         private UserInfo currentUser;
+        private UserAvatar currentAvatar;
+        private bool isOutfit;
         private long currentAssetId = 19027209;
 
         private GameInfo selectedGame;
@@ -99,6 +101,7 @@ namespace Rbx2Source
         {
             UserAvatar defaultAvatar = UserAvatar.FromUserId(2032622);
             currentUser = defaultAvatar.UserInfo;
+            currentAvatar = defaultAvatar;
             InitializeComponent();
 
             if (!Debugger.IsAttached)
@@ -345,7 +348,11 @@ namespace Rbx2Source
 
             if (compilerTypeSelect.Text == "Avatar")
             {
-                assetPreviewImage = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + currentUser.Id + "&size=420x420&format=Png&isCircular=false";
+                if (isOutfit)
+                    assetPreviewImage = "https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=" + currentUser.Id + "&size=420x420&format=Png&returnPolicy=PlaceHolder";
+                else
+                    assetPreviewImage = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + currentUser.Id + "&size=420x420&format=Png&isCircular=false";
+
                 compilerInput.Text = "Username:";
                 compilerInputField.Text = currentUser.Name;
                 compilerTypeIcon.Image = Properties.Resources.Humanoid_icon;
@@ -361,20 +368,65 @@ namespace Rbx2Source
 
         private bool TrySetUsername(string userName)
         {
-            UserAvatar avatar = UserAvatar.FromUsername(userName);
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                showError("Please enter a username, UserID, or OutfitID.");
+                return false;
+            }
+
+            UserAvatar avatar;
+
+            try
+            {
+                if (userName.StartsWith("outfit/") || userName.StartsWith("o:"))
+                {
+                    int separatorIdx = userName.IndexOf('/');
+                    if (separatorIdx < 0)
+                        separatorIdx = userName.IndexOf(':');
+
+                    string idStr = userName.Substring(separatorIdx + 1);
+
+                    if (long.TryParse(idStr, out long outfitId))
+                    {
+                        avatar = UserAvatar.FromOutfitId(outfitId);
+                        isOutfit = true;
+                    }
+                    else
+                    {
+                        showError("Invalid OutfitID format! Use \"outfit/12345\" or \"o:12345\".");
+                        return false;
+                    }
+                }
+                else if (long.TryParse(userName, out long userId))
+                {
+                    avatar = UserAvatar.FromUserId(userId);
+                    isOutfit = false;
+                }
+                else
+                {
+                    avatar = UserAvatar.FromUsername(userName);
+                    isOutfit = false;
+                }
+            }
+            catch
+            {
+                showError("An error occurred while trying to fetch this user!\n" +
+                          "Either the user does not exist, is banned or something went wrong with the request.");
+                return false;
+            }
 
             if (avatar.UserExists)
             {
                 Settings.SaveSetting("Username", userName);
-                assetPreview.Image = loadingImage; // Set the image to Loading.gif
+                assetPreview.Image = loadingImage;
                 currentUser = avatar.UserInfo;
+                currentAvatar = avatar;
                 return true;
             }
             else
             {
                 showError("An error occurred while trying to fetch this user!\n" +
                           "Either the user does not exist, is banned or something went wrong with the request.");
-
                 return false;
             }
         }
@@ -444,16 +496,21 @@ namespace Rbx2Source
                 compilerInputField.Enabled = false;
                 compilerTypeSelect.Enabled = false;
 
-                if (compilerTypeSelect.Text == "Avatar")
-                    TrySetUsername(compilerInputField.Text);
-                else if (compilerTypeSelect.Text == "Accessory/Gear")
-                    TrySetAssetId(compilerInputField.Text);
+                try
+                {
+                    if (compilerTypeSelect.Text == "Avatar")
+                        TrySetUsername(compilerInputField.Text);
+                    else if (compilerTypeSelect.Text == "Accessory/Gear")
+                        TrySetAssetId(compilerInputField.Text);
+                }
+                finally
+                {
+                    await Task.Delay(100);
+                    updateDisplays();
 
-                await Task.Delay(100);
-                updateDisplays();
-
-                compilerTypeSelect.Enabled = true;
-                compilerInputField.Enabled = true;
+                    compilerTypeSelect.Enabled = true;
+                    compilerInputField.Enabled = true;
+                }
             }
         }
 
@@ -561,8 +618,8 @@ namespace Rbx2Source
             if (compilerTypeSelect.Text == "Avatar")
             {
                 var assembler = new CharacterAssembler();
-                var userAvatar = UserAvatar.FromUsername(currentUser.Name);
-                assemble = new Func<AssemblerData>(() => assembler.Assemble(userAvatar));
+                assembler.CustomModelName = modelNameField.Text;
+                assemble = new Func<AssemblerData>(() => assembler.Assemble(currentAvatar));
             }
             else
             {
@@ -808,6 +865,7 @@ namespace Rbx2Source
                 gameSelect,
                 viewCompiledModel,
                 compilerTypeSelect,
+                modelNameField,
                 quickCompile,
                 useExistingObj,
                 apiKeyInput,
@@ -816,7 +874,8 @@ namespace Rbx2Source
 
             Links = new Dictionary<Control, string>()
             {
-                {cloneTwitter,  "https://www.github.com/MaximumADHD"},
+                {cloneTwitter,  "https://www.github.com/aleksa07"},
+                {maintainerLink, "https://www.github.com/aleksa07"},
                 {qfoxb,         "https://www.github.com/qfoxb"},
                 {AJLink,        "https://www.github.com/RedTopper"},
                 {egoMooseLink,  "https://www.github.com/EgoMoose"},

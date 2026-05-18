@@ -118,7 +118,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="changeLogBox.Text" xml:space="preserve">
-    <value>[v2.71.1] (April 18th, 2023)
+    <value>[v2.9] (May 18th, 2026)
+
+• Restored auto-update mechanism pointed at maintainer's repository
+• Search bar now accepts UserIDs, OutfitIDs (prefix "outfit/" or "o:")
+• Added model name textbox to customize output directory/QC name
+• Fixed post-2023 COREMESH v2 body meshes producing zero triangles
+• Guarded against invalid-input crashes in username field
+• Fixed layout overlapping controls
+• Updated About section credits
+______________________________________________________
+[v2.71.1] (April 18th, 2023)
 
 • Fixed error relating to ID's greater than the maximum 32-bit integer (thanks timelessnesses!)
 ______________________________________________________

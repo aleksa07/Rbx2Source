@@ -36,8 +36,11 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - **Self-update** — compares local version to GitHub `version.txt` on startup; downloads and renames `NEW_Rbx2Source.exe`.
 
 ## Upcoming work
+- [ ] Feature: Complete layered clothing extraction (LayeredClothingExtractor partial)
+- [ ] Enhancement: Model name textbox could be saved/loaded from settings
+- [ ] Enhancement: OutfitID field in form could show outfit name on load
 
-<!-- Add pending features/bug fixes here as a list, e.g.:
-- [ ] Feature: ...
-- [ ] Bug: ...
--->
+## Completed
+- [x] Release: Version bumped to 2.9, auto-update restored (aleksa07/Rbx2Source), changelog added
+- [x] Release: README, About section, workflows updated to point to aleksa07
+
