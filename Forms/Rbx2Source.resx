@@ -120,8 +120,11 @@
   <data name="changeLogBox.Text" xml:space="preserve">
     <value>[v2.9.4] (July 11th, 2026)
 
-• Fixed RobloxFileFormat CPU config — Rbx2Source now builds as x64
-• Updated username label to "Username or UserID:"
+• Changed the Username field to say "Username Or User ID:"
+______________________________________________________
+[v2.9.3] (July 11th, 2026)
+
+• Fixed RobloxFileFormat CPU config
 ______________________________________________________
 [v2.9] (May 18th, 2026)
 
