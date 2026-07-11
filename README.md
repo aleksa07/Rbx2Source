@@ -3,6 +3,14 @@
 # [Download Here](https://github.com/aleksa07/Rbx2Source/releases/latest/download/Rbx2Source.exe)
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Faleksa07%2FRbx2Source-enhanced&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)[![Repo Size](https://img.shields.io/github/repo-size/aleksa07/Rbx2Source)](https://hits.seeyoufarm.com)[![Build Rbx2Source](https://github.com/aleksa07/Rbx2Source/actions/workflows/build.yml/badge.svg)](https://github.com/aleksa07/Rbx2Source/actions/workflows/build.yml)![CodeQL](https://github.com/aleksa07/Rbx2Source/actions/workflows/codeql.yml/badge.svg)![Dependabot](https://img.shields.io/badge/dependabot-025E8C?style=flat&logo=dependabot&logoColor=white)![.Net](https://img.shields.io/badge/.NET-5C2D91?style=flat&logo=.net&logoColor=white)![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=flat&logo=c-sharp&logoColor=white)![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white)[<img src="https://discordapp.com/api/guilds/787797824557154344/widget.png?style=shield">](https://discord.gg/b9MUKXF88p)
 
+# Clarifaction About This Fork (LLM USED IN MAKING THE UPDATES)
+This fork is just to fix the old project Rbx2Source. **A LLM was used called [opencode.ai](https://github.com/anomalyco/opencode)** to make this fork work since I do not know how to code in C#. I will still try to keep it maintained and do bug fixes but for features now I call it feature done.
+
+# Featrues In This Fork
+- User id
+- Outfits Id (To use them start the Username field with "o:" or "outfit/")
+- Model Name
+
 # Setup
 - Download [.NET 4.7.2](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net472) if you don't have it already
 - Download the latest [Rbx2Source.exe](https://github.com/aleksa07/Rbx2Source/releases/latest/download/Rbx2Source.exe) file from the github page. 
