@@ -648,7 +648,7 @@
             this.compilerInput.Name = "compilerInput";
             this.compilerInput.Size = new System.Drawing.Size(58, 13);
             this.compilerInput.TabIndex = 5;
-            this.compilerInput.Text = "Username:";
+            this.compilerInput.Text = "Username or UserID:";
             // 
             // gameSelect
             // 
@@ -798,7 +798,7 @@
             this.MaximizeBox = false;
             this.Name = "Rbx2Source";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Rbx2Source v2.9.3";
+            this.Text = "Rbx2Source v2.9.4";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Rbx2Source_FormClosed);
             this.Load += new System.EventHandler(this.Rbx2Source_Load);
             this.About.ResumeLayout(false);

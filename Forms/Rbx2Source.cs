@@ -353,7 +353,7 @@ namespace Rbx2Source
                 else
                     assetPreviewImage = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + currentUser.Id + "&size=420x420&format=Png&isCircular=false";
 
-                compilerInput.Text = "Username:";
+                compilerInput.Text = "Username Or User ID:";
                 compilerInputField.Text = currentUser.Name;
                 compilerTypeIcon.Image = Properties.Resources.Humanoid_icon;
             }

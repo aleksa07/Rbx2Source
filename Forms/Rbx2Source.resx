@@ -118,9 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="changeLogBox.Text" xml:space="preserve">
-    <value>[v2.9.3] (July 11th, 2026)
+    <value>[v2.9.4] (July 11th, 2026)
 
-• Fixed RobloxFileFormat CPU config
+• Fixed RobloxFileFormat CPU config — Rbx2Source now builds as x64
+• Updated username label to "Username or UserID:"
 ______________________________________________________
 [v2.9] (May 18th, 2026)
 
