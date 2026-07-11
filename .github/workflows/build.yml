@@ -22,17 +22,17 @@ jobs:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
     - name: Build
-      run: msbuild Rbx2Source.sln
+      run: msbuild Rbx2Source.sln /p:Platform=x64
     - name: VirusTotal Scan
       continue-on-error: true
       uses: crazy-max/ghaction-virustotal@v3
       with:
         vt_api_key: ${{ secrets.VT_APIKEY}}
         request_rate: 4
-        files: bin/debug/Rbx2Source.exe  
+        files: bin/x64/Debug/Rbx2Source.exe
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Rbx2Source
-        path: bin/Debug/Rbx2Source.exe
+        path: bin/x64/Debug/Rbx2Source.exe
         if-no-files-found: error

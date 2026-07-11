@@ -36,7 +36,7 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build Release
-        run: msbuild Rbx2Source.sln /p:Configuration=Release /p:Platform="Any CPU"
+        run: msbuild Rbx2Source.sln /p:Configuration=Release /p:Platform=x64
 
       - name: Get tag name
         id: tag
@@ -69,7 +69,7 @@ jobs:
             ## Changelog
             ${{ steps.changelog.outputs.log }}
           files: |
-            bin/Release/Rbx2Source.exe
+            bin/x64/Release/Rbx2Source.exe
           draft: false
           prerelease: false
         env:

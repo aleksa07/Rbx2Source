@@ -57,6 +57,10 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - [x] Bug: CurrentVersion now initialized in Registry defaults (was missing, caused loop)
 - [x] Cleanup: version.txt removed from release assets
 
+## v2.9.3 changelog
+- [x] Release: Bumped all version refs to 2.9.3 (AssemblyInfo, App.config, form title, version.txt, git tag)
+- [x] Bug: Fixed RobloxFileFormat CPU config — changed Rbx2Source to build as x64 to match upstream
+
 ## Version update checklist
 When bumping version (e.g. 2.9.2 → 2.9.3), update ALL of these:
 1. `Properties/AssemblyInfo.cs` — `AssemblyVersion` + `AssemblyFileVersion`
