@@ -161,6 +161,7 @@
       <DependentUpon>Rbx2Source.cs</DependentUpon>
     </Compile>
     <Compile Include="Assembler\CharacterAssembler.cs" />
+    <Compile Include="Assembler\BodyPackages.cs" />
     <Compile Include="Assembler\Utility\FileUtility.cs" />
     <Compile Include="Assembler\R15CharacterAssembler.cs" />
     <Compile Include="Assembler\R6CharacterAssembler.cs" />

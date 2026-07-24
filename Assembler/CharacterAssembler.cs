@@ -506,6 +506,11 @@ namespace Rbx2Source.Assembler
             FileUtility.InitiateEmptyDirectories(modelDir, anim8Dir, texturesDir, materialsDir);
 
             AvatarType avatarType = avatar.PlayerAvatarType;
+
+            string forceR15Str = Resources.Settings.GetString("ForceR15");
+            if (forceR15Str == "True" || forceR15Str == "true")
+                avatarType = AvatarType.R15;
+
             ICharacterAssembler assembler;
 
             if (avatarType == AvatarType.R15)
@@ -520,7 +525,9 @@ namespace Rbx2Source.Assembler
 
             string avatarTypeName = Rbx2Source.GetEnumName(avatarType);
             Folder characterAssets = AppendCharacterAssets(avatar, avatarTypeName);
-            
+
+            ApplyBodyPackageOverrides(characterAssets, avatarType);
+
             Rbx2Source.ScheduleTasks
             (
                 "BuildCharacter",
@@ -827,6 +834,89 @@ namespace Rbx2Source.Assembler
             };
 
             return data;
+        }
+
+        private void ApplyBodyPackageOverrides(Folder characterAssets, AvatarType avatarType)
+        {
+            string forceR15Str = Resources.Settings.GetString("ForceR15");
+            bool forceR15 = forceR15Str == "True" || forceR15Str == "true";
+
+            if (!forceR15)
+                return;
+
+            if (avatarType == AvatarType.R15)
+            {
+                Rbx2Source.Print("Force R15 is enabled — stripping custom body parts for blocky R15");
+                ApplyR15Overrides(characterAssets);
+            }
+            else
+            {
+                string bodyPackage = Resources.Settings.GetString("BodyPackage");
+                string torsoType = Resources.Settings.GetString("TorsoType");
+
+                bool hasBodyPackageOverride = bodyPackage != "Default" && BodyPackages.Packages.ContainsKey(bodyPackage);
+                bool hasTorsoTypeOverride = torsoType == "Girl";
+
+                if (!hasBodyPackageOverride && !hasTorsoTypeOverride)
+                    return;
+
+                Dictionary<BodyPart, long> meshOverrides = null;
+
+                if (hasBodyPackageOverride)
+                {
+                    Rbx2Source.Print("Applying R6 body package: " + bodyPackage);
+                    meshOverrides = BodyPackages.ResolveMeshIds(BodyPackages.Packages[bodyPackage]);
+                }
+                else if (hasTorsoTypeOverride)
+                {
+                    Rbx2Source.Print("Applying R6 Girl torso override");
+                    meshOverrides = BodyPackages.ResolveGirlTorso();
+                }
+
+                if (meshOverrides != null && meshOverrides.Count > 0)
+                    ApplyR6Overrides(characterAssets, meshOverrides);
+            }
+        }
+
+        private void ApplyR6Overrides(Folder characterAssets, Dictionary<BodyPart, long> meshOverrides)
+        {
+            foreach (Instance child in characterAssets.GetChildren())
+            {
+                if (child is CharacterMesh)
+                {
+                    var characterMesh = child as CharacterMesh;
+
+                    if (meshOverrides.ContainsKey(characterMesh.BodyPart))
+                    {
+                        long newMeshId = meshOverrides[characterMesh.BodyPart];
+                        characterMesh.MeshId = newMeshId;
+                    }
+                }
+            }
+        }
+
+        private void ApplyR15Overrides(Folder characterAssets)
+        {
+            var toRemove = new List<Instance>();
+
+            foreach (Instance child in characterAssets.GetChildren())
+            {
+                if (child is MeshPart)
+                {
+                    BodyPart? limb = GetLimb(child as BasePart);
+
+                    if (limb.HasValue && limb.Value != BodyPart.Head)
+                    {
+                        toRemove.Add(child);
+                    }
+                }
+            }
+
+            foreach (Instance item in toRemove)
+            {
+                Rbx2Source.Print("  Removing custom R15 part: " + item.Name);
+                item.Destroy();
+            }
         }
     }
 }

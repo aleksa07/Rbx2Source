@@ -718,6 +718,29 @@ namespace Rbx2Source
             updateDisplays();
         }
 
+        private void bodyPackageSelect_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Settings.SaveSetting("BodyPackage", bodyPackageSelect.Text);
+            updateTorsoTypeVisibility();
+        }
+
+        private void torsoTypeSelect_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Settings.SaveSetting("TorsoType", torsoTypeSelect.Text);
+        }
+
+        private void forceR15_CheckedChanged(object sender, EventArgs e)
+        {
+            Settings.SaveSetting("ForceR15", forceR15.Checked);
+        }
+
+        private void updateTorsoTypeVisibility()
+        {
+            bool showTorsoType = bodyPackageSelect.Text == "Default";
+            torsoTypeLabel.Visible = showTorsoType;
+            torsoTypeSelect.Visible = showTorsoType;
+        }
+
         private void gameSelect_SelectedIndexChanged(object sender, EventArgs e)
         {
             GameInfo game = sourceGames[gameSelect.Text];
@@ -847,6 +870,13 @@ namespace Rbx2Source
 
             loadComboBox(gameSelect, "SelectedGame");
             loadComboBox(compilerTypeSelect, "CompilerType", 1);
+            loadComboBox(bodyPackageSelect, "BodyPackage");
+            loadComboBox(torsoTypeSelect, "TorsoType");
+
+            string forceR15Setting = Settings.GetString("ForceR15");
+            forceR15.Checked = forceR15Setting == "True" || forceR15Setting == "true";
+
+            updateTorsoTypeVisibility();
 
             string userName = Settings.GetString("Username");
             if (userName != null)
@@ -870,6 +900,9 @@ namespace Rbx2Source
                 useExistingObj,
                 apiKeyInput,
                 apiKeyHelp,
+                forceR15,
+                bodyPackageSelect,
+                torsoTypeSelect,
             };
 
             Links = new Dictionary<Control, string>()

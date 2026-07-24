@@ -29,6 +29,12 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Rbx2Source));
+            this.Advanced = new System.Windows.Forms.TabPage();
+            this.forceR15 = new System.Windows.Forms.CheckBox();
+            this.bodyPackageLabel = new System.Windows.Forms.Label();
+            this.bodyPackageSelect = new System.Windows.Forms.ComboBox();
+            this.torsoTypeLabel = new System.Windows.Forms.Label();
+            this.torsoTypeSelect = new System.Windows.Forms.ComboBox();
             this.About = new System.Windows.Forms.TabPage();
             this.label1 = new System.Windows.Forms.Label();
             this.timelesslabel = new System.Windows.Forms.Label();
@@ -712,10 +718,84 @@
             this.compilerTypeSelect.TabIndex = 0;
             this.compilerTypeSelect.SelectedIndexChanged += new System.EventHandler(this.compilerTypeSelect_SelectedIndexChanged);
             // 
+            // Advanced
+            // 
+            this.Advanced.Controls.Add(this.forceR15);
+            this.Advanced.Controls.Add(this.bodyPackageLabel);
+            this.Advanced.Controls.Add(this.bodyPackageSelect);
+            this.Advanced.Controls.Add(this.torsoTypeLabel);
+            this.Advanced.Controls.Add(this.torsoTypeSelect);
+            this.Advanced.Location = new System.Drawing.Point(4, 25);
+            this.Advanced.Margin = new System.Windows.Forms.Padding(2);
+            this.Advanced.Name = "Advanced";
+            this.Advanced.Size = new System.Drawing.Size(350, 307);
+            this.Advanced.TabIndex = 5;
+            this.Advanced.Text = "Advanced";
+            this.Advanced.UseVisualStyleBackColor = true;
+            // 
+            // forceR15
+            // 
+            this.forceR15.AutoSize = true;
+            this.forceR15.Location = new System.Drawing.Point(17, 18);
+            this.forceR15.Name = "forceR15";
+            this.forceR15.Size = new System.Drawing.Size(145, 17);
+            this.forceR15.TabIndex = 0;
+            this.forceR15.Text = "Force R15 body type";
+            this.forceR15.UseVisualStyleBackColor = true;
+            // 
+            // bodyPackageLabel
+            // 
+            this.bodyPackageLabel.AutoSize = true;
+            this.bodyPackageLabel.Location = new System.Drawing.Point(15, 50);
+            this.bodyPackageLabel.Name = "bodyPackageLabel";
+            this.bodyPackageLabel.Size = new System.Drawing.Size(84, 13);
+            this.bodyPackageLabel.TabIndex = 1;
+            this.bodyPackageLabel.Text = "Body Package:";
+            // 
+            // bodyPackageSelect
+            // 
+            this.bodyPackageSelect.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.bodyPackageSelect.FormattingEnabled = true;
+            this.bodyPackageSelect.Items.AddRange(new object[] {
+            "Default",
+            "Boy",
+            "Girl",
+            "Man",
+            "Woman"});
+            this.bodyPackageSelect.Location = new System.Drawing.Point(17, 68);
+            this.bodyPackageSelect.Name = "bodyPackageSelect";
+            this.bodyPackageSelect.Size = new System.Drawing.Size(121, 21);
+            this.bodyPackageSelect.TabIndex = 2;
+            // 
+            // torsoTypeLabel
+            // 
+            this.torsoTypeLabel.AutoSize = true;
+            this.torsoTypeLabel.Location = new System.Drawing.Point(15, 102);
+            this.torsoTypeLabel.Name = "torsoTypeLabel";
+            this.torsoTypeLabel.Size = new System.Drawing.Size(69, 13);
+            this.torsoTypeLabel.TabIndex = 3;
+            this.torsoTypeLabel.Text = "Torso Type:";
+            // 
+            // torsoTypeSelect
+            // 
+            this.torsoTypeSelect.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.torsoTypeSelect.FormattingEnabled = true;
+            this.torsoTypeSelect.Items.AddRange(new object[] {
+            "Normal",
+            "Girl"});
+            this.torsoTypeSelect.Location = new System.Drawing.Point(17, 120);
+            this.torsoTypeSelect.Name = "torsoTypeSelect";
+            this.torsoTypeSelect.Size = new System.Drawing.Size(121, 21);
+            this.torsoTypeSelect.TabIndex = 4;
+            this.torsoTypeSelect.SelectedIndexChanged += new System.EventHandler(this.torsoTypeSelect_SelectedIndexChanged);
+            this.bodyPackageSelect.SelectedIndexChanged += new System.EventHandler(this.bodyPackageSelect_SelectedIndexChanged);
+            this.forceR15.CheckedChanged += new System.EventHandler(this.forceR15_CheckedChanged);
+            // 
             // MainTab
             // 
             this.MainTab.Appearance = System.Windows.Forms.TabAppearance.FlatButtons;
             this.MainTab.Controls.Add(this.Compiler);
+            this.MainTab.Controls.Add(this.Advanced);
             this.MainTab.Controls.Add(this.About);
             this.MainTab.Controls.Add(this.ChangeLog);
             this.MainTab.Controls.Add(this.Debug);
@@ -881,5 +961,11 @@
         private System.Windows.Forms.PictureBox originalCreatorIcon;
         private System.Windows.Forms.LinkLabel originalCreatorLink;
         private System.Windows.Forms.Label originalCreatorLabel;
+        private System.Windows.Forms.TabPage Advanced;
+        private System.Windows.Forms.CheckBox forceR15;
+        private System.Windows.Forms.Label bodyPackageLabel;
+        private System.Windows.Forms.ComboBox bodyPackageSelect;
+        private System.Windows.Forms.Label torsoTypeLabel;
+        private System.Windows.Forms.ComboBox torsoTypeSelect;
     }
 }
