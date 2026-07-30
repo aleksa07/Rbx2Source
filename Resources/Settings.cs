@@ -77,7 +77,7 @@ namespace Rbx2Source.Resources
                 SetSetting("InitializedV3", true);
                 SetSetting("ApiKey", "");
                 SetSetting("CurrentVersion", "2.9.4");
-                SetSetting("ForceR15", false);
+                SetSetting("ForceAvatarType", "Default");
                 SetSetting("BodyPackage", "Default");
                 SetSetting("TorsoType", "Normal");
             }

@@ -729,9 +729,9 @@ namespace Rbx2Source
             Settings.SaveSetting("TorsoType", torsoTypeSelect.Text);
         }
 
-        private void forceR15_CheckedChanged(object sender, EventArgs e)
+        private void forceAvatarTypeSelect_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Settings.SaveSetting("ForceR15", forceR15.Checked);
+            Settings.SaveSetting("ForceAvatarType", forceAvatarTypeSelect.Text);
         }
 
         private void updateTorsoTypeVisibility()
@@ -873,8 +873,7 @@ namespace Rbx2Source
             loadComboBox(bodyPackageSelect, "BodyPackage");
             loadComboBox(torsoTypeSelect, "TorsoType");
 
-            string forceR15Setting = Settings.GetString("ForceR15");
-            forceR15.Checked = forceR15Setting == "True" || forceR15Setting == "true";
+            loadComboBox(forceAvatarTypeSelect, "ForceAvatarType");
 
             updateTorsoTypeVisibility();
 
@@ -900,7 +899,7 @@ namespace Rbx2Source
                 useExistingObj,
                 apiKeyInput,
                 apiKeyHelp,
-                forceR15,
+                forceAvatarTypeSelect,
                 bodyPackageSelect,
                 torsoTypeSelect,
             };

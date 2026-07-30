@@ -507,9 +507,11 @@ namespace Rbx2Source.Assembler
 
             AvatarType avatarType = avatar.PlayerAvatarType;
 
-            string forceR15Str = Resources.Settings.GetString("ForceR15");
-            if (forceR15Str == "True" || forceR15Str == "true")
+            string forceAvatarType = Resources.Settings.GetString("ForceAvatarType");
+            if (forceAvatarType == "R15")
                 avatarType = AvatarType.R15;
+            else if (forceAvatarType == "R6")
+                avatarType = AvatarType.R6;
 
             ICharacterAssembler assembler;
 
@@ -838,10 +840,8 @@ namespace Rbx2Source.Assembler
 
         private void ApplyBodyPackageOverrides(Folder characterAssets, AvatarType avatarType)
         {
-            string forceR15Str = Resources.Settings.GetString("ForceR15");
-            bool forceR15 = forceR15Str == "True" || forceR15Str == "true";
-
-            if (!forceR15)
+            string forceAvatarType = Resources.Settings.GetString("ForceAvatarType");
+            if (forceAvatarType == "Default")
                 return;
 
             if (avatarType == AvatarType.R15)
