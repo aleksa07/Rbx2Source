@@ -157,7 +157,10 @@ namespace Rbx2Source.Assembler
 
             // Append Head & Face
             Asset faceAsset = GetAvatarFace(characterAssets);
-            compositor.AppendTexture(faceAsset, RECT_HEAD, 1);
+
+            if (faceAsset != null)
+                compositor.AppendTexture(faceAsset, RECT_HEAD, 1);
+
             compositor.AppendColor(bodyColors.HeadColor3, RECT_HEAD);
 
             // Append Shirt

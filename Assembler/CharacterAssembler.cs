@@ -432,6 +432,10 @@ namespace Rbx2Source.Assembler
 
                         if (textureId.Length > 0 && headMesh.MeshType == MeshType.FileMesh)
                             return Asset.GetByAssetId(headMesh.TextureId);
+
+                        // NoFace dynamic heads with no baked texture should stay faceless.
+                        if (headMesh.Tags.Contains("NoFace"))
+                            return null;
                     }
                 }
             }

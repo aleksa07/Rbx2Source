@@ -553,7 +553,9 @@ namespace Rbx2Source.Assembler
 
             // Append Face
             Asset face = GetAvatarFace(characterAssets);
-            compositor.AppendTexture(face, RECT_HEAD, 1);
+
+            if (face != null)
+                compositor.AppendTexture(face, RECT_HEAD, 1);
 
             // Append Shirt
             Shirt shirt = characterAssets.FindFirstChildOfClass<Shirt>();
