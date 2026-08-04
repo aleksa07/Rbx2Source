@@ -422,14 +422,15 @@ namespace Rbx2Source.Assembler
                             return Asset.GetByAssetId(texId);
                     }
 
-                    // Dynamic head via SpecialMesh with NoFace tag.
+                    // Dynamic head via SpecialMesh. The face texture is baked into the
+                    // head texture itself, so any non-empty FileMesh texture is the face.
                     SpecialMesh headMesh = head.FindFirstChildOfClass<SpecialMesh>();
 
                     if (headMesh != null && headMesh.TextureId != null)
                     {
                         string textureId = headMesh.TextureId;
 
-                        if (textureId.Length > 0 && headMesh.Tags.Contains("NoFace"))
+                        if (textureId.Length > 0 && headMesh.MeshType == MeshType.FileMesh)
                             return Asset.GetByAssetId(headMesh.TextureId);
                     }
                 }
