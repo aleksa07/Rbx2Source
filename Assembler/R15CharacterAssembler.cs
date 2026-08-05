@@ -452,7 +452,6 @@ namespace Rbx2Source.Assembler
 
             // Apply accessory scaling
             var layeredClothingParts = new List<BasePart>();
-            ObjFile layeredClothing = null;
 
             foreach (BasePart handle in accessoryParts)
             {
@@ -482,40 +481,11 @@ namespace Rbx2Source.Assembler
 
             if (layeredClothingParts.Any())
             {
-                DialogResult result;
-
-                if (LayeredClothingExtractor.UseExistingObj)
-                    result = DialogResult.Yes;
-                else
-                    result = MessageBox.Show("In order to compile layered clothing correctly, Rbx2Source needs to grab an obj mesh of your avatar from Roblox Studio so the layered clothing geometry can be extracted.\n\nSelect \"Yes\" if you are okay with proceeding, or select \"No\" to remove the layered clothing.", "Heads up!", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-                if (result == DialogResult.Yes)
-                {
-                    var extractor = new LayeredClothingExtractor(avatar);
-                    var task = extractor.Extract();
-
-                    task.Wait();
-                    layeredClothing = extractor.Output;
-                }
-
-                if (layeredClothing != null)
-                {
-                    for (int i = 0; i < layeredClothing.Groups.Count; i++)
-                    {
-                        var group = layeredClothing.Groups[i];
-                        group = group.Replace("a1", "");
-
-                        if (!long.TryParse(group, out long assetId))
-                            continue;
-
-                        Mesh.RegisterTemporaryBakeMorph(assetId, layeredClothing, i);
-                    }
-                }
-                else
-                {
-                    Rbx2Source.Print("Could not get layered clothing data! Removing...");
-                    layeredClothingParts.ForEach(handle => handle.Destroy());
-                }
+                // Layered clothing is not supported: the OBJ export used to drive the
+                // extractor cannot represent wrap deformation, so output was wrong even
+                // when it didn't crash. Drop the layers instead of prompting.
+                Rbx2Source.Print("Layered clothing is not supported; removing {0} layer(s)...", layeredClothingParts.Count);
+                layeredClothingParts.ForEach(handle => handle.Destroy());
             }
 
             BasePart torso = assembly.FindFirstChild<BasePart>("LowerTorso");
