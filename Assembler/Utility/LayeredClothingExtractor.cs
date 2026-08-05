@@ -41,8 +41,12 @@ namespace Rbx2Source.Assembler
                 if (File.Exists(existing))
                 {
                     string contents = File.ReadAllText(existing);
-                    Output = new ObjFile(contents);
-                    return;
+
+                    if (!string.IsNullOrWhiteSpace(contents))
+                    {
+                        Output = new ObjFile(contents);
+                        return;
+                    }
                 }
             }
 
@@ -73,8 +77,8 @@ namespace Rbx2Source.Assembler
             var pluginPath = Path.Combine(localAppData, "Roblox", "Plugins", "Rbx2Source_LayeredClothingExtractor.lua");
 
             var plugin = ResourceUtility.GetResource("Plugin/LayeredClothingExtractor.lua");
+            Directory.CreateDirectory(Path.GetDirectoryName(pluginPath));
             File.WriteAllBytes(pluginPath, plugin);
-
 
             var startTime = DateTime.Now;
             Process studioProc = null;
@@ -82,31 +86,36 @@ namespace Rbx2Source.Assembler
             try
             {
                 // Try to find Roblox Studio's location directly.
-                var currentUser = Registry.CurrentUser;
-                var software = currentUser.OpenSubKey("SOFTWARE");
-
-                var roblox = software.OpenSubKey("Roblox");
-                var robloxStudio = roblox.OpenSubKey("RobloxStudio");
-                var contentFolder = robloxStudio.GetValue("ContentFolder") as string;
-
-                var studioPath = Path.Combine(contentFolder, "..", "RobloxStudioBeta.exe");
-                var studioInfo = new FileInfo(studioPath);
-
-                if (!studioInfo.Exists)
-                    throw new Exception("Studio not found!");
-
-                var startInfo = new ProcessStartInfo()
+                using (var software = Registry.CurrentUser.OpenSubKey("SOFTWARE"))
+                using (var roblox = software?.OpenSubKey("Roblox"))
+                using (var robloxStudio = roblox?.OpenSubKey("RobloxStudio"))
                 {
-                    FileName = studioInfo.FullName,
-                    Arguments = placeFile,
-                };
+                    var contentFolder = robloxStudio?.GetValue("ContentFolder") as string;
 
-                studioProc = Process.Start(startInfo);
+                    if (string.IsNullOrWhiteSpace(contentFolder))
+                        throw new Exception("Studio not found!");
+
+                    var studioPath = Path.Combine(contentFolder, "..", "RobloxStudioBeta.exe");
+                    var studioInfo = new FileInfo(studioPath);
+
+                    if (!studioInfo.Exists)
+                        throw new Exception("Studio not found!");
+
+                    var startInfo = new ProcessStartInfo()
+                    {
+                        FileName = studioInfo.FullName,
+                        Arguments = placeFile,
+                    };
+
+                    studioProc = Process.Start(startInfo);
+                }
             }
             catch
             {
                 // Alright, start it directly by file, and wait for a new RobloxStudioBeta process.
                 Process.Start(placeFile);
+
+                var launchTimeout = DateTime.Now.AddSeconds(60);
 
                 while (true)
                 {
@@ -122,15 +131,16 @@ namespace Rbx2Source.Assembler
                     if (studioProc != null)
                         break;
 
+                    if (DateTime.Now > launchTimeout)
+                        throw new TimeoutException("Timed out waiting for Roblox Studio to launch.");
+
                     await Task.Delay(200);
                 }
             }
-            
-            string objFile = "";
-            
-            var objFilePath = Path.Combine(desktopPath, "Rbx2SourceRig (SAVE TO DESKTOP).obj");
-            var fileInfo = new FileInfo(objFilePath);
 
+            string objFile = "";
+
+            var objFilePath = Path.Combine(desktopPath, "Rbx2SourceRig (SAVE TO DESKTOP).obj");
             var fileWatcher = new FileSystemWatcher()
             {
                 Path = desktopPath,
@@ -138,29 +148,64 @@ namespace Rbx2Source.Assembler
                 Filter = "Rbx2SourceRig (SAVE TO DESKTOP).obj"
             };
 
-            fileWatcher.Changed += new FileSystemEventHandler(async (_, eventArgs) =>
+            fileWatcher.Changed += new FileSystemEventHandler((_, eventArgs) =>
             {
-                await Task.Delay(1000);
+                Task.Delay(1000).ContinueWith((delayTask) =>
+                {
+                    if (objFile.Length > 0)
+                        return;
 
-                if (objFile.Length > 0)
-                    return;
+                    if (File.Exists(objFilePath))
+                        objFile = File.ReadAllText(objFilePath);
 
-                objFile = File.ReadAllText(objFilePath);
-                studioProc.Kill();
+                    KillStudio(studioProc);
+                });
             });
 
             fileWatcher.EnableRaisingEvents = true;
 
-            while (objFile.Length == 0)
-                if (studioProc.HasExited)
-                    break;
+            try
+            {
+                var exportTimeout = DateTime.Now.AddMinutes(5);
 
-                await Task.Delay(500);
+                while (objFile.Length == 0 && studioProc != null && !studioProc.HasExited)
+                {
+                    if (DateTime.Now > exportTimeout)
+                        throw new TimeoutException("Timed out waiting for Roblox Studio to export the OBJ file.");
+
+                    await Task.Delay(500);
+                }
+            }
+            finally
+            {
+                fileWatcher.Dispose();
+            }
+
+            KillStudio(studioProc);
 
             if (objFile.Length > 0)
-                Output = new ObjFile(objFile);
+            {
+                try
+                {
+                    Output = new ObjFile(objFile);
+                }
+                catch
+                {
+                    Output = null;
+                }
+            }
+        }
 
-            fileWatcher.Dispose();
+        private static void KillStudio(Process studioProc)
+        {
+            try
+            {
+                if (studioProc != null && !studioProc.HasExited)
+                    studioProc.Kill();
+            }
+            catch
+            {
+            }
         }
     }
 }

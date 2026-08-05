@@ -568,14 +568,11 @@ namespace Rbx2Source
 
             if (aException != null)
             {
-                Exception exception = aException.InnerException;
-                if (exception != null)
-                {
-                    exceptionMsg = exception.Message;
-                    errorMsg += "\nError Message: " + exceptionMsg + "\n\n" +
-                                "If this error message has happened multiple times, and doesn't seem deliberate, you should file an issue on GitHub.\n\n" +
-                                "STACK TRACE:\n" + outputDivider + "\n" + exception.StackTrace + "\n" + outputDivider;
-                }
+                Exception exception = GetRootException(aException);
+                exceptionMsg = exception.Message;
+                errorMsg += "\nError Message: " + exceptionMsg + "\n\n" +
+                            "If this error message has happened multiple times, and doesn't seem deliberate, you should file an issue on GitHub.\n\n" +
+                            "STACK TRACE:\n" + outputDivider + "\n" + exception.StackTrace + "\n" + outputDivider;
             }
 
             Print(baseErrorMsg);
@@ -588,6 +585,34 @@ namespace Rbx2Source
                 Debugger.Break();
 
             compileProgress.Value = 0;
+        }
+
+        // Unwraps AggregateException chains (from task.Wait / task.Result) down to
+        // the deepest non-aggregate exception so the real error is shown to the user.
+        private static Exception GetRootException(AggregateException aggregate)
+        {
+            Exception current = aggregate;
+
+            while (current != null)
+            {
+                var currentAggregate = current as AggregateException;
+
+                if (currentAggregate != null && currentAggregate.InnerExceptions.Count > 0)
+                {
+                    current = currentAggregate.InnerExceptions[0];
+                    continue;
+                }
+
+                if (current.InnerException != null)
+                {
+                    current = current.InnerException;
+                    continue;
+                }
+
+                return current;
+            }
+
+            return aggregate;
         }
 
         private async void compile_Click(object sender, EventArgs e)
