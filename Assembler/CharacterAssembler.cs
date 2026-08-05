@@ -183,7 +183,22 @@ namespace Rbx2Source.Assembler
 
             if (handle != null)
             {
-                handle.Name = FileUtility.MakeNameWindowsSafe(asset.Name);
+                // Accessory instance names are not unique (e.g. "Accessory (MeshPartAccessory)"
+                // is reused across uploads). The handle name becomes the material key, so two
+                // same-named accessories would share one material and one of their textures
+                // would win, rendering both with it. Dedupe against parts already in the assembly.
+                string safeName = FileUtility.MakeNameWindowsSafe(asset.Name);
+
+                if (safeName.Length == 0)
+                    safeName = "accessory";
+
+                string baseName = safeName;
+                int index = 1;
+
+                while (assembly.FindFirstChild<BasePart>(safeName) != null)
+                    safeName = baseName + "_" + (index++);
+
+                handle.Name = safeName;
                 handle.CFrame = new CFrame();
                 handle.Parent = assembly;
                 
@@ -428,14 +443,15 @@ namespace Rbx2Source.Assembler
 
                     if (headMesh != null && headMesh.TextureId != null)
                     {
+                        // NoFace dynamic heads (e.g. Devon Default) carry a mood/expression
+                        // atlas in TextureId, not a baked face — keep them faceless.
+                        if (headMesh.Tags.Contains("NoFace"))
+                            return null;
+
                         string textureId = headMesh.TextureId;
 
                         if (textureId.Length > 0 && headMesh.MeshType == MeshType.FileMesh)
                             return Asset.GetByAssetId(headMesh.TextureId);
-
-                        // NoFace dynamic heads with no baked texture should stay faceless.
-                        if (headMesh.Tags.Contains("NoFace"))
-                            return null;
                     }
                 }
             }
