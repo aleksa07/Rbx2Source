@@ -180,7 +180,7 @@ namespace Rbx2Source.Animating
                 var frame = new BoneKeyframe(i);
                 List<StudioBone> bones = frame.Bones;
                 
-                if (avatarType == "R15" || avatarType == "R6")
+                if (avatarType == "R15")
                 {
                     frame.BaseRig = rig;
                     frame.DeltaSequence = true;

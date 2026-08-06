@@ -1001,6 +1001,9 @@ namespace Rbx2Source.Assembler
                 QuakeCItem sequence = qc.Add("sequence", animName.ToLowerInvariant(), "Animations/" + animName + ".smd");
                 sequence.AddSubItem("fps", AnimationBuilder.FrameRate);
 
+                if (avatarType == AvatarType.R6)
+                    sequence.AddSubItem("delta");
+
                 sequence.AddSubItem("loop");
             }
 
