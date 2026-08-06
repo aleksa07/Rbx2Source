@@ -674,6 +674,7 @@ namespace Rbx2Source
             {
                 var assembler = new CharacterAssembler();
                 assembler.CustomModelName = modelNameField.Text;
+                CharacterAssembler.HeadModeSetting = ParseHeadMode(Settings.GetString("HeadMode"));
                 assemble = new Func<AssemblerData>(() => assembler.Assemble(currentAvatar));
             }
             else
@@ -767,6 +768,14 @@ namespace Rbx2Source
             }
         }
 
+        private static HeadMode ParseHeadMode(string value)
+        {
+            if (Enum.TryParse(value, out HeadMode mode))
+                return mode;
+
+            return HeadMode.Default;
+        }
+
         private void compilerTypeSelect_SelectedIndexChanged(object sender, EventArgs e)
         {
             Settings.SaveSetting("CompilerType", compilerTypeSelect.Text);
@@ -787,6 +796,11 @@ namespace Rbx2Source
         private void forceAvatarTypeSelect_SelectedIndexChanged(object sender, EventArgs e)
         {
             Settings.SaveSetting("ForceAvatarType", forceAvatarTypeSelect.Text);
+        }
+
+        private void headModeSelect_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Settings.SaveSetting("HeadMode", headModeSelect.Text);
         }
 
         private void updateTorsoTypeVisibility()
@@ -929,6 +943,7 @@ namespace Rbx2Source
             loadComboBox(torsoTypeSelect, "TorsoType");
 
             loadComboBox(forceAvatarTypeSelect, "ForceAvatarType");
+            loadComboBox(headModeSelect, "HeadMode");
 
             updateTorsoTypeVisibility();
 

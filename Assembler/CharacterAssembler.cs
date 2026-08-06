@@ -20,12 +20,31 @@ using System.Diagnostics.Contracts;
 namespace Rbx2Source.Assembler
 {
     public enum Limb { Head, Torso, LeftArm, RightArm, LeftLeg, RightLeg, Unknown }
+
+    public enum HeadMode
+    {
+        Default,
+        Faceless,
+        Headless
+    }
     
     public class CharacterAssembler : IAssembler<UserAvatar>
     {
         public static bool DEBUG_RAPID_ASSEMBLY = false;
         public string CustomModelName { get; set; }
         private const float DEG2RAD = (float)Math.PI / 180f;
+
+        // User's choice from the Advanced tab (Default = auto-detect).
+        public static HeadMode HeadModeSetting = HeadMode.Default;
+
+        // Resolved per-avatar: combines the user setting with the auto-detection
+        // signals (head asset name, NoFace tag, baked texture presence).
+        public static HeadMode EffectiveHeadMode = HeadMode.Default;
+
+        public static bool IsHeadless()
+        {
+            return EffectiveHeadMode == HeadMode.Headless;
+        }
 
         public static BodyPart? GetLimb(BasePart part)
         {
@@ -347,6 +366,29 @@ namespace Rbx2Source.Assembler
                     }
                 }
 
+                // Stamp the source asset name onto the head mesh so face detection
+                // can classify faceless/headless heads by name.
+                if (info.Name != null && info.Name.Length > 0)
+                {
+                    foreach (SpecialMesh mesh in import.GetDescendantsOfType<SpecialMesh>())
+                    {
+                        if (mesh.Name != "Mesh" || mesh.MeshType != MeshType.FileMesh)
+                            continue;
+
+                        bool isHeadMesh = mesh.GetDescendantsOfType<Vector3Value>()
+                            .Any(v => v.Name == "NeckRigAttachment");
+
+                        if (!isHeadMesh)
+                            continue;
+
+                        StringValue existing = mesh.FindFirstChild<StringValue>("AssetName");
+                        if (existing != null)
+                            existing.Destroy();
+
+                        new StringValue { Name = "AssetName", Value = info.Name }.Parent = mesh;
+                    }
+                }
+
                 if (position != null)
                 {
                     foreach (var desc in import.GetDescendants())
@@ -420,11 +462,85 @@ namespace Rbx2Source.Assembler
             return collisionAssets;
         }
 
+        // Resolves the head mode for this avatar. An explicit user override wins;
+        // otherwise the head asset name is inspected for headless/faceless hints.
+        private static HeadMode ResolveHeadMode(Folder characterAssets)
+        {
+            if (HeadModeSetting != HeadMode.Default)
+                return HeadModeSetting;
+
+            string headName = GetHeadAssetName(characterAssets);
+
+            if (IsHeadlessName(headName))
+                return HeadMode.Headless;
+
+            if (IsFacelessName(headName))
+                return HeadMode.Faceless;
+
+            return HeadMode.Default;
+        }
+
+        private static string GetHeadAssetName(Folder characterAssets)
+        {
+            Contract.Requires(characterAssets != null);
+            Folder assembly = characterAssets.FindFirstChild<Folder>("ASSEMBLY");
+
+            if (assembly != null)
+            {
+                BasePart head = assembly.FindFirstChild<BasePart>("Head");
+
+                if (head != null)
+                {
+                    StringValue nameValue = head.FindFirstChild<StringValue>("AssetName");
+
+                    if (nameValue != null && nameValue.Value != null)
+                        return nameValue.Value;
+
+                    SpecialMesh mesh = head.FindFirstChildOfClass<SpecialMesh>();
+
+                    if (mesh != null)
+                    {
+                        nameValue = mesh.FindFirstChild<StringValue>("AssetName");
+                        if (nameValue != null && nameValue.Value != null)
+                            return nameValue.Value;
+                    }
+                }
+            }
+
+            return "";
+        }
+
+        private static bool IsHeadlessName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            string lower = name.ToLowerInvariant();
+            return lower.Contains("headless")
+                || lower.Contains("nohead")
+                || lower.Contains("no head");
+        }
+
+        private static bool IsFacelessName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            string lower = name.ToLowerInvariant();
+            return lower.Contains("faceless")
+                || lower.Contains("noface")
+                || lower.Contains("no face");
+        }
+
         public static Asset GetAvatarFace(Folder characterAssets)
         {
             // Check if this avatar's head is using a texture overlay.
             Contract.Requires(characterAssets != null);
             Folder assembly = characterAssets.FindFirstChild<Folder>("ASSEMBLY");
+
+            // Faceless/headless modes composite no face layer at all.
+            if (EffectiveHeadMode == HeadMode.Headless || EffectiveHeadMode == HeadMode.Faceless)
+                return null;
 
             if (assembly != null)
             {
@@ -436,35 +552,39 @@ namespace Rbx2Source.Assembler
                     if (head is MeshPart meshHead)
                     {
                         string texId = meshHead.TextureID;
+
                         if (texId != null && texId.Length > 0)
                             return Asset.GetByAssetId(texId);
+
+                        // Mesh head with no baked texture is faceless.
+                        return null;
                     }
 
                     // Dynamic head via SpecialMesh. The face texture is baked into the
                     // head texture itself, so any non-empty FileMesh texture is the face.
                     SpecialMesh headMesh = head.FindFirstChildOfClass<SpecialMesh>();
 
-                    if (headMesh != null && headMesh.TextureId != null)
+                    if (headMesh != null && headMesh.MeshType == MeshType.FileMesh)
                     {
                         string textureId = headMesh.TextureId;
 
-                        if (textureId.Length > 0 && headMesh.MeshType == MeshType.FileMesh)
-                        {
-                            // NoFace dynamic heads come in two kinds:
-                            //  - Mood/expression control maps (e.g. Devon Default), whose
-                            //    face is drawn by Roblox's dynamic-head shader, not baked
-                            //    into the texture — nothing static to export.
-                            //  - Real face overlays (e.g. expression heads like "Tired Face"),
-                            //    where the texture is the face painted on a transparent
-                            //    background and can be composited directly.
-                            // Only composite the overlay kind; keep shader-driven heads faceless.
-                            Asset faceTexture = Asset.GetByAssetId(textureId);
+                        // NoFace dynamic heads come in two kinds:
+                        //  - Mood/expression control maps (e.g. Devon Default), whose
+                        //    face is drawn by Roblox's dynamic-head shader, not baked
+                        //    into the texture — nothing static to export.
+                        //  - Real face overlays (e.g. expression heads like "Tired Face"),
+                        //    where the texture is the face painted on a transparent
+                        //    background and can be composited directly.
+                        // Only composite the overlay kind; keep shader-driven heads faceless.
+                        if (textureId == null || textureId.Length == 0)
+                            return null;
 
-                            if (headMesh.Tags.Contains("NoFace") && !IsRealFaceOverlay(faceTexture))
-                                return null;
+                        Asset faceTexture = Asset.GetByAssetId(textureId);
 
-                            return faceTexture;
-                        }
+                        if (headMesh.Tags.Contains("NoFace") && !IsRealFaceOverlay(faceTexture))
+                            return null;
+
+                        return faceTexture;
                     }
                 }
             }
@@ -597,6 +717,8 @@ namespace Rbx2Source.Assembler
 
             string avatarTypeName = Rbx2Source.GetEnumName(avatarType);
             Folder characterAssets = AppendCharacterAssets(avatar, avatarTypeName);
+
+            EffectiveHeadMode = ResolveHeadMode(characterAssets);
 
             ApplyBodyPackageOverrides(characterAssets, avatarType);
 

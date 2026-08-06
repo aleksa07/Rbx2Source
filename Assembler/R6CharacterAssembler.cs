@@ -97,6 +97,8 @@ namespace Rbx2Source.Assembler
             BasePart torso = assembly.FindFirstChild<BasePart>("Torso");
             torso.CFrame = new CFrame();
 
+            bool headless = CharacterAssembler.IsHeadless();
+
             foreach (Instance asset in characterAssets.GetChildren())
             {
                 if (asset is CharacterMesh && !collisionModel)
@@ -131,7 +133,20 @@ namespace Rbx2Source.Assembler
                 }
                 else if (asset is DataModelMesh)
                 {
-                    OverwriteHead(asset as DataModelMesh, head);
+                    if (headless)
+                        asset.Destroy();
+                    else
+                        OverwriteHead(asset as DataModelMesh, head);
+                }
+            }
+
+            // Headless mode removes the head geometry (and anything tied to it).
+            if (headless)
+            {
+                foreach (BasePart part in assembly.GetChildrenOfType<BasePart>().ToList())
+                {
+                    if (GetLimb(part) == BodyPart.Head)
+                        part.Destroy();
                 }
             }
 

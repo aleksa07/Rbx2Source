@@ -36,6 +36,8 @@
             this.bodyPackageSelect = new System.Windows.Forms.ComboBox();
             this.torsoTypeLabel = new System.Windows.Forms.Label();
             this.torsoTypeSelect = new System.Windows.Forms.ComboBox();
+            this.headModeLabel = new System.Windows.Forms.Label();
+            this.headModeSelect = new System.Windows.Forms.ComboBox();
             this.About = new System.Windows.Forms.TabPage();
             this.label1 = new System.Windows.Forms.Label();
             this.timelesslabel = new System.Windows.Forms.Label();
@@ -727,6 +729,8 @@
         this.Advanced.Controls.Add(this.bodyPackageSelect);
         this.Advanced.Controls.Add(this.torsoTypeLabel);
         this.Advanced.Controls.Add(this.torsoTypeSelect);
+        this.Advanced.Controls.Add(this.headModeLabel);
+        this.Advanced.Controls.Add(this.headModeSelect);
         this.Advanced.Location = new System.Drawing.Point(4, 25);
         this.Advanced.Margin = new System.Windows.Forms.Padding(2);
         this.Advanced.Name = "Advanced";
@@ -801,6 +805,29 @@
         this.torsoTypeSelect.Name = "torsoTypeSelect";
         this.torsoTypeSelect.Size = new System.Drawing.Size(121, 21);
         this.torsoTypeSelect.TabIndex = 5;
+        // 
+        // headModeLabel
+        // 
+        this.headModeLabel.AutoSize = true;
+        this.headModeLabel.Location = new System.Drawing.Point(15, 169);
+        this.headModeLabel.Name = "headModeLabel";
+        this.headModeLabel.Size = new System.Drawing.Size(65, 13);
+        this.headModeLabel.TabIndex = 6;
+        this.headModeLabel.Text = "Head Mode:";
+        // 
+        // headModeSelect
+        // 
+        this.headModeSelect.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+        this.headModeSelect.FormattingEnabled = true;
+        this.headModeSelect.Items.AddRange(new object[] {
+        "Default",
+        "Faceless",
+        "Headless"});
+        this.headModeSelect.Location = new System.Drawing.Point(17, 187);
+        this.headModeSelect.Name = "headModeSelect";
+        this.headModeSelect.Size = new System.Drawing.Size(121, 21);
+        this.headModeSelect.TabIndex = 7;
+        this.headModeSelect.SelectedIndexChanged += new System.EventHandler(this.headModeSelect_SelectedIndexChanged);
         this.torsoTypeSelect.SelectedIndexChanged += new System.EventHandler(this.torsoTypeSelect_SelectedIndexChanged);
         this.bodyPackageSelect.SelectedIndexChanged += new System.EventHandler(this.bodyPackageSelect_SelectedIndexChanged);
         this.forceAvatarTypeSelect.SelectedIndexChanged += new System.EventHandler(this.forceAvatarTypeSelect_SelectedIndexChanged);
@@ -982,5 +1009,7 @@
         private System.Windows.Forms.ComboBox bodyPackageSelect;
         private System.Windows.Forms.Label torsoTypeLabel;
         private System.Windows.Forms.ComboBox torsoTypeSelect;
+        private System.Windows.Forms.Label headModeLabel;
+        private System.Windows.Forms.ComboBox headModeSelect;
     }
 }

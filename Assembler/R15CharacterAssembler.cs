@@ -399,6 +399,8 @@ namespace Rbx2Source.Assembler
 
             BasePart head = assembly.FindFirstChild<BasePart>("Head");
             assembly.Parent = characterAssets;
+
+            bool headless = CharacterAssembler.IsHeadless();
             
             foreach (Instance asset in characterAssets.GetChildren())
             {
@@ -429,7 +431,20 @@ namespace Rbx2Source.Assembler
                 }
                 else if (asset is DataModelMesh)
                 {
-                    OverwriteHead(asset as DataModelMesh, head);
+                    if (headless)
+                        asset.Destroy();
+                    else
+                        OverwriteHead(asset as DataModelMesh, head);
+                }
+            }
+
+            // Headless mode removes the head geometry (and anything tied to it).
+            if (headless)
+            {
+                foreach (BasePart part in assembly.GetChildrenOfType<BasePart>().ToList())
+                {
+                    if (GetLimb(part) == BodyPart.Head)
+                        part.Destroy();
                 }
             }
 

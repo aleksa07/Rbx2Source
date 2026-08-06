@@ -80,6 +80,7 @@ namespace Rbx2Source.Resources
                 SetSetting("ForceAvatarType", "Default");
                 SetSetting("BodyPackage", "Default");
                 SetSetting("TorsoType", "Normal");
+                SetSetting("HeadMode", "Default");
             }
 
             software.Dispose();
