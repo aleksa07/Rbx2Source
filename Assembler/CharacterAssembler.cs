@@ -446,15 +446,25 @@ namespace Rbx2Source.Assembler
 
                     if (headMesh != null && headMesh.TextureId != null)
                     {
-                        // NoFace dynamic heads (e.g. Devon Default) carry a mood/expression
-                        // atlas in TextureId, not a baked face — keep them faceless.
-                        if (headMesh.Tags.Contains("NoFace"))
-                            return null;
-
                         string textureId = headMesh.TextureId;
 
                         if (textureId.Length > 0 && headMesh.MeshType == MeshType.FileMesh)
-                            return Asset.GetByAssetId(headMesh.TextureId);
+                        {
+                            // NoFace dynamic heads come in two kinds:
+                            //  - Mood/expression control maps (e.g. Devon Default), whose
+                            //    face is drawn by Roblox's dynamic-head shader, not baked
+                            //    into the texture — nothing static to export.
+                            //  - Real face overlays (e.g. expression heads like "Tired Face"),
+                            //    where the texture is the face painted on a transparent
+                            //    background and can be composited directly.
+                            // Only composite the overlay kind; keep shader-driven heads faceless.
+                            Asset faceTexture = Asset.GetByAssetId(textureId);
+
+                            if (headMesh.Tags.Contains("NoFace") && !IsRealFaceOverlay(faceTexture))
+                                return null;
+
+                            return faceTexture;
+                        }
                     }
                 }
             }
@@ -484,6 +494,42 @@ namespace Rbx2Source.Assembler
                 result = Asset.FromResource("Images/face.png");
 
             return result;
+        }
+
+        // Distinguishes real face overlays from shader-driven mood/expression
+        // control maps. A genuine painted face has anti-aliased (semi-transparent)
+        // edges around its features, while control maps are flat color regions
+        // with strictly opaque or fully transparent pixels.
+        private static bool IsRealFaceOverlay(Asset texture)
+        {
+            try
+            {
+                byte[] content = texture.GetContent();
+
+                if (content == null || content.Length == 0)
+                    return false;
+
+                using (var stream = new MemoryStream(content))
+                using (var image = new Bitmap(stream))
+                {
+                    for (int y = 0; y < image.Height; y += 4)
+                    {
+                        for (int x = 0; x < image.Width; x += 4)
+                        {
+                            int alpha = image.GetPixel(x, y).A;
+
+                            if (alpha >= 16 && alpha <= 239)
+                                return true;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Not an image, or decode failed — treat as faceless.
+            }
+
+            return false;
         }
 
         public static float ComputeFloorLevel(Folder assembly)
@@ -700,9 +746,11 @@ namespace Rbx2Source.Assembler
                     Rbx2Source.Print("Building Animation {0}...", animName);
 
                     Asset animAsset = compileAnims[animName];
-                    var import = animAsset.OpenAsModel();
-                    
-                    var sequence = import.FindFirstChildOfClass<KeyframeSequence>();
+                    KeyframeSequence sequence = OpenAnimationSequence(animAsset, avatarType, animName, out Asset usedAsset);
+
+                    if (sequence == null)
+                        continue;
+
                     sequence.Name = animName;
 
                     var avatarTypeRef = new StringValue()
@@ -860,6 +908,43 @@ namespace Rbx2Source.Assembler
             };
 
             return data;
+        }
+
+        private static KeyframeSequence OpenAnimationSequence(Asset animAsset, AvatarType avatarType, string animName, out Asset usedAsset)
+        {
+            usedAsset = animAsset;
+
+            if (animAsset == null)
+                return null;
+
+            Instance import = animAsset.OpenAsModel();
+            KeyframeSequence sequence = import?.FindFirstChildOfClass<KeyframeSequence>();
+
+            if (sequence != null)
+                return sequence;
+
+            // Roblox now ships default locomotion animations as CurveAnimation
+            // bundles (per-joint Vector3Curve / EulerRotationCurve). AnimationBuilder
+            // can't parse those yet, so fall back to the legacy R15 KeyframeSequence
+            // defaults to avoid failing the whole assembly.
+            if (avatarType == AvatarType.R15
+                && R15CharacterAssembler.TryGetDefaultAnimationId(animName, out long defaultId)
+                && animAsset.Id != defaultId)
+            {
+                Asset fallback = Asset.Get(defaultId);
+                Instance fallbackImport = fallback.OpenAsModel();
+                KeyframeSequence fallbackSeq = fallbackImport?.FindFirstChildOfClass<KeyframeSequence>();
+
+                if (fallbackSeq != null)
+                {
+                    Rbx2Source.Print("Animation {0} uses the unsupported CurveAnimation format; falling back to default (id {1}).", animName, defaultId);
+                    usedAsset = fallback;
+                    return fallbackSeq;
+                }
+            }
+
+            Rbx2Source.Print("Animation {0} uses an unsupported format and was skipped.", animName);
+            return null;
         }
 
         private void ApplyBodyPackageOverrides(Folder characterAssets, AvatarType avatarType)

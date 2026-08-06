@@ -171,6 +171,11 @@ namespace Rbx2Source.Assembler
             { "Sit",   2506281703 },
         };
 
+        public static bool TryGetDefaultAnimationId(string animName, out long animId)
+        {
+            return R15_ANIMATION_IDS.TryGetValue(animName, out animId);
+        }
+
         public static string GetAvatarPartScaleType(BasePart part)
         {
             Contract.Requires(part != null);
