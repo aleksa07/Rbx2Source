@@ -18,6 +18,11 @@ namespace Rbx2Source.Web
         public string Message;
     }
 
+    public class RateLimitException : Exception
+    {
+        public RateLimitException(string message) : base(message) { }
+    }
+
     public partial class CdnPender
     {
         public Datum[] Data { get; set; }
@@ -60,50 +65,82 @@ namespace Rbx2Source.Web
             waitTask.Wait();
         }
 
-        public static byte[] DownloadData(string address, string method = "GET", string body = "")
+        public static byte[] DownloadData(string address, string method = "GET", string body = "", int maxRetriesOn429 = 0)
         {
-            HttpWebRequest request = WebRequest.CreateHttp(new Uri(address));
-            request.Headers.Set(HttpRequestHeader.AcceptEncoding, "gzip");
+            int attempts = 0;
 
-            request.UserAgent = "Roblox";
-            request.Proxy = null;
-
-            request.UseDefaultCredentials = true;
-            request.Method = method;
-
-            if (body != "")
+            while (true)
             {
-                request.ContentType = "application/json";
-
-                using (var stream = request.GetRequestStream())
-                using (var writer = new StreamWriter(stream))
+                try
                 {
-                    writer.Write(body);
+                    HttpWebRequest request = WebRequest.CreateHttp(new Uri(address));
+                    request.Headers.Set(HttpRequestHeader.AcceptEncoding, "gzip");
+
+                    request.UserAgent = "Roblox";
+                    request.Proxy = null;
+
+                    request.UseDefaultCredentials = true;
+                    request.Method = method;
+
+                    if (body != "")
+                    {
+                        request.ContentType = "application/json";
+
+                        using (var stream = request.GetRequestStream())
+                        using (var writer = new StreamWriter(stream))
+                        {
+                            writer.Write(body);
+                        }
+                    }
+
+                    var response = request.GetResponse() as HttpWebResponse;
+                    var responseStream = response.GetResponseStream();
+
+                    byte[] result;
+
+                    if (response.ContentEncoding == "gzip")
+                    {
+                        var decompressor = new GZipStream(responseStream, CompressionMode.Decompress);
+                        result = ReadFullStream(decompressor);
+                        decompressor.Dispose();
+                    }
+                    else
+                    {
+                        result = ReadFullStream(responseStream);
+                    }
+
+                    return result;
+                }
+                catch (WebException ex)
+                {
+                    var errorResponse = ex.Response as HttpWebResponse;
+                    bool rateLimited = errorResponse != null && (int)errorResponse.StatusCode == 429;
+
+                    if (rateLimited && attempts < maxRetriesOn429)
+                    {
+                        attempts++;
+
+                        int retryAfter = 0;
+                        if (!int.TryParse(errorResponse.Headers["Retry-After"], out retryAfter))
+                            retryAfter = 0;
+
+                        int waitSeconds = Math.Max(retryAfter, 45);
+                        wait(Math.Min(waitSeconds, 60));
+
+                        continue;
+                    }
+
+                    if (rateLimited)
+                        throw new RateLimitException("Roblox is rate-limiting requests. Please wait a moment and try again.");
+
+                    throw;
                 }
             }
-
-            var response = request.GetResponse() as HttpWebResponse;
-            var responseStream = response.GetResponseStream();
-
-            byte[] result;
-
-            if (response.ContentEncoding == "gzip")
-            {
-                var decompressor = new GZipStream(responseStream, CompressionMode.Decompress);
-                result = ReadFullStream(decompressor);
-                decompressor.Dispose();
-            }
-            else
-            {
-                result = ReadFullStream(responseStream);
-            }
-
-            return result;
         }
 
-        public static string DownloadString(string address, string method = "GET", string body = "")
+        public static string DownloadString(string address, string method = "GET", string body = "", int maxRetriesOn429 = 0)
         {
-            byte[] data = DownloadData(address, method, body);
+            byte[] data = DownloadData(address, method, body, maxRetriesOn429);
             return Encoding.UTF8.GetString(data);
         }
 
@@ -118,9 +155,9 @@ namespace Rbx2Source.Web
             return result;
         }
 
-        public static T DownloadJSON<T>(string address, string method = "GET", string body = "")
+        public static T DownloadJSON<T>(string address, string method = "GET", string body = "", int maxRetriesOn429 = 0)
         {
-            byte[] content = DownloadData(address, method, body);
+            byte[] content = DownloadData(address, method, body, maxRetriesOn429);
             var json = Encoding.UTF8.GetString(content);
             return JsonConvert.DeserializeObject<T>(json);
         }

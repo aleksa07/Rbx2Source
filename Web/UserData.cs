@@ -140,7 +140,7 @@ namespace Rbx2Source.Web
 
         private static UserAvatar CreateUserAvatar(UserInfo info)
         {
-            var avatar = WebUtil.DownloadJSON<UserAvatar>($"https://avatar.roblox.com/v2/avatar/users/{info.Id}/avatar");
+            var avatar = WebUtil.DownloadJSON<UserAvatar>($"https://avatar.roblox.com/v2/avatar/users/{info.Id}/avatar", maxRetriesOn429: 3);
             avatar.UserExists = true;
             avatar.UserInfo = info;
 
@@ -149,7 +149,7 @@ namespace Rbx2Source.Web
 
         public static UserAvatar FromUserId(long userId)
         {
-            var info = WebUtil.DownloadJSON<UserInfo>($"https://users.roblox.com/v1/users/{userId}");
+            var info = WebUtil.DownloadJSON<UserInfo>($"https://users.roblox.com/v1/users/{userId}", maxRetriesOn429: 3);
             return CreateUserAvatar(info);
         }
 
@@ -158,7 +158,7 @@ namespace Rbx2Source.Web
             var request = new MultiGetByUsernameRequest(false, userName);
             var requestBody = request.ToString();
 
-            var userInfos = WebUtil.DownloadJSON<UserInfos>("https://users.roblox.com/v1/usernames/users", "POST", requestBody);
+            var userInfos = WebUtil.DownloadJSON<UserInfos>("https://users.roblox.com/v1/usernames/users", "POST", requestBody, 3);
 
             if (userInfos.Data == null || userInfos.Data.Length == 0)
                 return new UserAvatar() { UserExists = false };
@@ -169,7 +169,7 @@ namespace Rbx2Source.Web
 
         public static UserAvatar FromOutfitId(long outfitId)
         {
-            var outfit = WebUtil.DownloadJSON<OutfitDetails>($"https://avatar.roblox.com/v1/outfits/{outfitId}/details");
+            var outfit = WebUtil.DownloadJSON<OutfitDetails>($"https://avatar.roblox.com/v1/outfits/{outfitId}/details", maxRetriesOn429: 3);
 
             if (string.IsNullOrWhiteSpace(outfit.Name))
                 return new UserAvatar() { UserExists = false };

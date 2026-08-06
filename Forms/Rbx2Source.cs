@@ -408,8 +408,14 @@ namespace Rbx2Source
                     isOutfit = false;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                if (ex is RateLimitException)
+                {
+                    showError("Roblox is rate-limiting requests right now.\nPlease wait about a minute and try again.");
+                    return false;
+                }
+
                 showError("An error occurred while trying to fetch this user!\n" +
                           "Either the user does not exist, is banned or something went wrong with the request.");
                 return false;
