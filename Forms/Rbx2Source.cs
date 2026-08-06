@@ -221,6 +221,17 @@ namespace Rbx2Source
             Application.Exit();
         }
 
+        private void RunOnUI(Action action)
+        {
+            if (IsDisposed)
+                return;
+
+            if (IsHandleCreated && InvokeRequired)
+                BeginInvoke(action);
+            else
+                action();
+        }
+
         private static string[] getStringsInQuotes(string str)
         {
             List<int> quoteLocs = new List<int>();
@@ -370,7 +381,7 @@ namespace Rbx2Source
         {
             if (string.IsNullOrWhiteSpace(userName))
             {
-                showError("Please enter a username, UserID, or OutfitID.");
+                RunOnUI(() => showError("Please enter a username, UserID, or OutfitID."));
                 return false;
             }
 
@@ -393,7 +404,7 @@ namespace Rbx2Source
                     }
                     else
                     {
-                        showError("Invalid OutfitID format! Use \"outfit/12345\" or \"o:12345\".");
+                        RunOnUI(() => showError("Invalid OutfitID format! Use \"outfit/12345\" or \"o:12345\"."));
                         return false;
                     }
                 }
@@ -427,22 +438,22 @@ namespace Rbx2Source
                                   "Either the user does not exist, is banned or something went wrong with the request.";
                 }
 
-                showError(message);
+                RunOnUI(() => showError(message));
                 return false;
             }
 
             if (avatar.UserExists)
             {
                 Settings.SaveSetting("Username", userName);
-                assetPreview.Image = loadingImage;
+                RunOnUI(() => assetPreview.Image = loadingImage);
                 currentUser = avatar.UserInfo;
                 currentAvatar = avatar;
                 return true;
             }
             else
             {
-                showError("An error occurred while trying to fetch this user!\n" +
-                          "Either the user does not exist, is banned or something went wrong with the request.");
+                RunOnUI(() => showError("An error occurred while trying to fetch this user!\n" +
+                          "Either the user does not exist, is banned or something went wrong with the request."));
                 return false;
             }
         }
@@ -515,7 +526,10 @@ namespace Rbx2Source
                 try
                 {
                     if (compilerTypeSelect.Text == "Avatar")
-                        TrySetUsername(compilerInputField.Text);
+                    {
+                        string text = compilerInputField.Text;
+                        await Task.Run(() => TrySetUsername(text));
+                    }
                     else if (compilerTypeSelect.Text == "Accessory/Gear")
                         TrySetAssetId(compilerInputField.Text);
                 }
