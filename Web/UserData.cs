@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using RobloxFiles.DataTypes;
 
 using Newtonsoft.Json;
@@ -169,7 +170,15 @@ namespace Rbx2Source.Web
 
         public static UserAvatar FromOutfitId(long outfitId)
         {
-            var outfit = WebUtil.DownloadJSON<OutfitDetails>($"https://avatar.roblox.com/v1/outfits/{outfitId}/details", maxRetriesOn429: 3);
+            OutfitDetails outfit = LoadOutfitFromCache(outfitId);
+
+            if (outfit == null)
+            {
+                outfit = WebUtil.DownloadJSON<OutfitDetails>($"https://avatar.roblox.com/v1/outfits/{outfitId}/details", maxRetriesOn429: 3);
+
+                if (!string.IsNullOrWhiteSpace(outfit.Name))
+                    SaveOutfitToCache(outfitId, outfit);
+            }
 
             if (string.IsNullOrWhiteSpace(outfit.Name))
                 return new UserAvatar() { UserExists = false };
@@ -214,6 +223,52 @@ namespace Rbx2Source.Web
             };
 
             return avatar;
+        }
+
+        private static string GetOutfitCachePath(long outfitId)
+        {
+            string appData = Environment.GetEnvironmentVariable("LocalAppData");
+            string cacheDir = Path.Combine(appData, "Rbx2Source", "OutfitCache");
+            return Path.Combine(cacheDir, outfitId.ToInvariantString() + ".json");
+        }
+
+        private static OutfitDetails LoadOutfitFromCache(long outfitId)
+        {
+            try
+            {
+                string path = GetOutfitCachePath(outfitId);
+
+                if (File.Exists(path))
+                {
+                    string json = File.ReadAllText(path);
+                    OutfitDetails outfit = JsonConvert.DeserializeObject<OutfitDetails>(json);
+
+                    if (outfit != null && !string.IsNullOrWhiteSpace(outfit.Name) && outfit.Assets != null)
+                        return outfit;
+
+                    File.Delete(path);
+                }
+            }
+            catch
+            {
+                // Corrupted cache? Fall back to a fresh fetch.
+            }
+
+            return null;
+        }
+
+        private static void SaveOutfitToCache(long outfitId, OutfitDetails outfit)
+        {
+            try
+            {
+                string path = GetOutfitCachePath(outfitId);
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllText(path, JsonConvert.SerializeObject(outfit, Formatting.None));
+            }
+            catch
+            {
+                // Oh well.
+            }
         }
     }
 
