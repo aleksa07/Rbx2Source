@@ -180,7 +180,7 @@ namespace Rbx2Source.Animating
                 var frame = new BoneKeyframe(i);
                 List<StudioBone> bones = frame.Bones;
                 
-                if (avatarType == "R15")
+                if (avatarType == "R15" || avatarType == "R6")
                 {
                     frame.BaseRig = rig;
                     frame.DeltaSequence = true;
@@ -230,40 +230,10 @@ namespace Rbx2Source.Animating
                                * CFrame.FromEulerAnglesXYZ(0, angles.Pitch, 0) 
                                * new CFrame(interp.Position);
                     }
-                    else if (avatarType == "R6")
-                    {
-                        // R6 pose CFrames are delta offsets in Roblox's animation space.
-                        // Translate them into the Source skeleton space (axis swaps and a
-                        // right-side X inversion) so that large-motion animations don't
-                        // scramble the avatar in-game.
-                        Vector3 pos = interp.Position;
-                        CFrame rot = interp - pos;
-                        var invariant = StringComparison.InvariantCulture;
-
-                        if (name == "Torso")
-                        {
-                            // Flip the YZ axis of the Torso.
-                            EulerAngles ang = interp.ToEulerAngles();
-                            rot = CFrame.Angles(ang.Pitch, ang.Roll, ang.Yaw);
-                            pos = new Vector3(pos.X, pos.Z, pos.Y);
-                        }
-                        else if (name.StartsWith("Right", invariant))
-                        {
-                            // X-axis is inverted for the right arm/leg.
-                            pos *= new Vector3(-1, 1, 1);
-                        }
-
-                        if (name.EndsWith("Arm", invariant) || name.EndsWith("Leg", invariant))
-                        {
-                            // Rotate position offset of the arms & legs 90 degrees counter-clockwise.
-                            pos = new Vector3(-pos.Z, pos.Y, pos.X);
-                        }
-
-                        if (name != "Head")
-                            rot = rot.Inverse();
-
-                        interp = new CFrame(pos) * rot;
-                    }
+                    // R6 poses are raw Roblox KeyframeSequence deltas. The DeltaSequence
+                    // writer composes them with each bone's reference C0 (the classic R6
+                    // Motor6D joint frames), producing absolute frames that mirror the
+                    // real in-game pose (boneCFrame = C0 * pose). No axis patches needed.
 
                     var bone = new StudioBone(node, interp);
                     bones.Add(bone);
