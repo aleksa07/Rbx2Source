@@ -410,14 +410,24 @@ namespace Rbx2Source
             }
             catch (Exception ex)
             {
+                string message;
+
                 if (ex is RateLimitException)
                 {
-                    showError("Roblox is rate-limiting requests right now.\nPlease wait about a minute and try again.");
-                    return false;
+                    message = "Roblox is rate-limiting requests right now.\nPlease wait about a minute and try again.";
+                }
+                else
+                {
+                    var errorResponse = (ex as WebException)?.Response as HttpWebResponse;
+
+                    if (errorResponse != null && (int)errorResponse.StatusCode == 404)
+                        message = "Couldn't find that user or outfit.\nCheck the UserID / OutfitID and try again.";
+                    else
+                        message = "An error occurred while trying to fetch this user!\n" +
+                                  "Either the user does not exist, is banned or something went wrong with the request.";
                 }
 
-                showError("An error occurred while trying to fetch this user!\n" +
-                          "Either the user does not exist, is banned or something went wrong with the request.");
+                showError(message);
                 return false;
             }
 
