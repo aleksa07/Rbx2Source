@@ -118,7 +118,18 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="changeLogBox.Text" xml:space="preserve">
-    <value>[v2.9.4] (July 11th, 2026)
+    <value>[v2.10.5] (August 6th, 2026)
+
+• Fixed R6 animations so they no longer scramble or mirror in-game
+• Added head mode (Default / Faceless / Headless) with auto-detect from the head asset name
+• Added Advanced tab: body package override, force avatar type (Default / R6 / R15), torso type selection
+• Retry on Roblox 429 rate limits and show an accurate message when a user/outfit isn't found
+• Fetch avatars and outfits on a background thread so the UI no longer freezes
+• Cache outfit details to disk so repeated outfit lookups skip the rate-limited API
+• Fixed faceless Dynamic Heads and accessory (glasses) positioning
+• Removed the broken layered-clothing prompt (WrapLayer items are skipped at assembly)
+______________________________________________________
+[v2.9.4] (July 11th, 2026)
 
 • Changed the Username field to say "Username Or User ID:"
 ______________________________________________________

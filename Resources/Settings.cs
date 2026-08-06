@@ -76,7 +76,7 @@ namespace Rbx2Source.Resources
                 SetSetting("CompilerType", "Avatar");
                 SetSetting("InitializedV3", true);
                 SetSetting("ApiKey", "");
-                SetSetting("CurrentVersion", "2.9.4");
+                SetSetting("CurrentVersion", "2.10.5");
                 SetSetting("ForceAvatarType", "Default");
                 SetSetting("BodyPackage", "Default");
                 SetSetting("TorsoType", "Normal");

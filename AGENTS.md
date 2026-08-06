@@ -43,6 +43,17 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - [ ] Enhancement: Model name textbox could be saved/loaded from settings
 - [ ] Enhancement: OutfitID field in form could show outfit name on load
 
+## v2.10.5 changelog
+- [x] Release: Bumped all version refs to 2.10.5 (AssemblyInfo, App.config, form title, version.txt, Settings.cs, in-app changelog, git tag)
+- [x] Bug: R6 animations fixed — raw delta frames + QC `$delta` (Source composes `reference * delta` = Roblox's `C0 * pose`); no longer scramble or mirror in-game
+- [x] Feature: Head mode (Default/Faceless/Headless) with name-based auto-detect from head asset name
+- [x] Feature: Advanced tab — body package override, force avatar type dropdown (Default/R6/R15), torso type selection
+- [x] Bug: Retry on Roblox 429 rate limits; accurate 404 message for missing users/outfits
+- [x] Feature: Avatar/outfit fetch on a background thread so the UI no longer freezes
+- [x] Feature: Outfit details cached to disk so repeated outfit lookups skip the rate-limited API
+- [x] Bug: Faceless Dynamic Heads (NoFace + empty texture) and accessory (glasses) positioning fixes
+- [x] Cleanup: Removed broken layered clothing prompt (WrapLayer items skipped at assembly)
+
 ## v2.9.2 changelog
 - [x] Release: Bumped all version refs to 2.9.2 (AssemblyInfo, App.config, form title, version.txt, git tag)
 - [x] Feature: Model name textbox added to form, CustomModelName on CharacterAssembler
