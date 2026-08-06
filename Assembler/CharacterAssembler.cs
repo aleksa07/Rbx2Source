@@ -325,8 +325,11 @@ namespace Rbx2Source.Assembler
 
                 if (rotation != null)
                 {
-                    // Roblox rotates accessories relative to the bounding box center,
-                    // and this... makes the attachment offset pivot around. Fun!
+                    // Meta rotation is applied to the attachment orientation.
+                    // The position must be preserved, otherwise an attachment
+                    // with its own 180-degree rotation (e.g. FaceFrontAttachment
+                    // glasses) gets its position flipped even when meta
+                    // rotation is (0, 0, 0).
 
                     foreach (var att in import.GetDescendantsOfType<Attachment>())
                     {
@@ -339,7 +342,7 @@ namespace Rbx2Source.Assembler
                             * CFrame.Angles(-rotation.X * DEG2RAD, 0, 0)
                             * CFrame.Angles(0, -rotation.Y * DEG2RAD, 0);
 
-                        var newCF = newRot * new CFrame(pos);
+                        var newCF = newRot + pos;
                         att.CFrame = newCF;
                     }
                 }
