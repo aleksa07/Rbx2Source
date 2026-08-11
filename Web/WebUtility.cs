@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
 using Newtonsoft.Json;
 
@@ -46,7 +46,7 @@ namespace Rbx2Source.Web
             using (MemoryStream streamBuffer = new MemoryStream())
             {
                 stream.CopyTo(streamBuffer);
-                result = streamBuffer.GetBuffer();
+                result = streamBuffer.ToArray();
             }
 
             if (close)
@@ -61,8 +61,7 @@ namespace Rbx2Source.Web
         private static void wait(float time)
         {
             int ms = (int)(time * 1000);
-            Task waitTask = Task.Delay(ms);
-            waitTask.Wait();
+            Thread.Sleep(ms);
         }
 
         public static byte[] DownloadData(string address, string method = "GET", string body = "", int maxRetriesOn429 = 0)
@@ -124,8 +123,8 @@ namespace Rbx2Source.Web
                         if (!int.TryParse(errorResponse.Headers["Retry-After"], out retryAfter))
                             retryAfter = 0;
 
-                        int waitSeconds = Math.Max(retryAfter, 45);
-                        wait(Math.Min(waitSeconds, 60));
+                        int waitSeconds = retryAfter > 0 ? Math.Min(retryAfter, 60) : 5;
+                        wait(waitSeconds);
 
                         continue;
                     }

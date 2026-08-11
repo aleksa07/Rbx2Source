@@ -54,25 +54,44 @@ namespace Rbx2Source.Compiler
 
         public Task RunWithOutput()
         {
-            Process process = Run();
-            StreamReader output = process.StandardOutput;
+            var paramStrings = parameters
+                .Select(param => param.ToString())
+                .ToArray();
 
-            Task runTask = Task.Run(() =>
+            ProcessStartInfo info = new ProcessStartInfo()
             {
-                while (true)
+                Arguments = string.Join(" ", paramStrings),
+                FileName = appPath,
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            Process process = Process.Start(info);
+
+            Task outputTask = DrainOutput(process.StandardOutput);
+            Task errorTask = DrainOutput(process.StandardError);
+
+            return Task.WhenAll(outputTask, errorTask)
+                .ContinueWith(completed =>
                 {
-                    Task<string> nextLineAsync = output.ReadLineAsync();
-                    nextLineAsync.Wait(1000);
+                    process.WaitForExit();
+                    process.Dispose();
+                });
+        }
 
-                    string nextLine = nextLineAsync.Result;
-                    if (nextLine == null)
-                        break;
+        private static async Task DrainOutput(StreamReader reader)
+        {
+            while (true)
+            {
+                string line = await reader.ReadLineAsync().ConfigureAwait(false);
 
-                    Rbx2Source.Print(nextLine);
-                }
-            });
+                if (line == null)
+                    break;
 
-            return runTask;
+                Rbx2Source.Print(line);
+            }
         }
     }
 }

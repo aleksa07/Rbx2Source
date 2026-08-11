@@ -7,6 +7,7 @@ namespace Rbx2Source.Resources
     static class Settings
     {
         private static readonly Dictionary<string, object> cache;
+        private static readonly HashSet<string> dirtyKeys;
         private static readonly RegistryKey rbx2Source;
 
         public static object GetSetting(string key)
@@ -30,20 +31,31 @@ namespace Rbx2Source.Resources
 
         public static void Save()
         {
-            foreach (string key in cache.Keys)
+            if (dirtyKeys.Count == 0)
+                return;
+
+            foreach (string key in dirtyKeys)
             {
                 object value = cache[key];
 
                 if (value != null)
                 {
-                    rbx2Source.SetValue(key, cache[key]);
+                    rbx2Source.SetValue(key, value);
                 }
             }
+
+            dirtyKeys.Clear();
         }
 
         public static void SetSetting(string key, object value)
         {
+            object existing;
+
+            if (cache.TryGetValue(key, out existing) && Equals(existing, value))
+                return;
+
             cache[key] = value;
+            dirtyKeys.Add(key);
         }
 
         public static void SaveSetting(string key, object value)
@@ -65,6 +77,7 @@ namespace Rbx2Source.Resources
 
             rbx2Source = Open(software, "Rbx2Source");
             cache = new Dictionary<string, object>();
+            dirtyKeys = new HashSet<string>();
 
             foreach (string key in rbx2Source.GetValueNames())
                 SetSetting(key, rbx2Source.GetValue(key));

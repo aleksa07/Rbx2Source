@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 using RobloxFiles;
 using RobloxFiles.DataTypes;
@@ -153,6 +154,8 @@ namespace Rbx2Source.Assembler
             var textures = new TextureBindings();
             var images = textures.Images;
 
+            var fetchAssets = new HashSet<Asset>();
+
             foreach (string mtlName in materials.Keys)
             {
                 ValveMaterial material = materials[mtlName];
@@ -204,14 +207,36 @@ namespace Rbx2Source.Assembler
                     }
                     else
                     {*/
-                        byte[] rawImg = textureAsset.GetContent();
-
-                        using (MemoryStream imgStream = new MemoryStream(rawImg))
-                        {
-                            Image image = Image.FromStream(imgStream);
-                            textures.BindTexture(mtlName, image);
-                        }
+                        if (textureAsset != null)
+                            fetchAssets.Add(textureAsset);
                     //}
+                }
+            }
+
+            var fetchTasks = fetchAssets
+                .Select(asset => Task.Run(() => new { Asset = asset, Content = asset.GetContent() }))
+                .ToArray();
+
+            var fetched = Task.WhenAll(fetchTasks).GetAwaiter().GetResult();
+
+            var contentByAsset = new Dictionary<Asset, byte[]>();
+            foreach (var item in fetched)
+                contentByAsset[item.Asset] = item.Content;
+
+            foreach (string mtlName in materials.Keys)
+            {
+                ValveMaterial material = materials[mtlName];
+
+                foreach (var pair in material.TextureAssets)
+                {
+                    Asset textureAsset = pair.Value;
+                    byte[] rawImg = contentByAsset[textureAsset];
+
+                    using (MemoryStream imgStream = new MemoryStream(rawImg))
+                    {
+                        Image image = Image.FromStream(imgStream);
+                        textures.BindTexture(mtlName, image);
+                    }
                 }
             }
 

@@ -1,5 +1,5 @@
 ﻿using System.Globalization;
-using System.Linq;
+using System.Text;
 
 // This global class defines extension methods to numeric types
 // where I don't want system globalization to come into play.
@@ -62,10 +62,22 @@ public static class Format
 
     public static string FormatFloats(params float[] values)
     {
-        string[] results = values
-            .Select(value => value.ToInvariantString())
-            .ToArray();
+        if (values == null)
+            throw new System.ArgumentNullException(nameof(values));
 
-        return string.Join(" ", results);
+        if (values.Length == 0)
+            return "";
+
+        var buffer = new StringBuilder(values.Length * 9);
+
+        for (int i = 0; i < values.Length; i++)
+        {
+            if (i > 0)
+                buffer.Append(' ');
+
+            buffer.Append(values[i].ToInvariantString());
+        }
+
+        return buffer.ToString();
     }
 }

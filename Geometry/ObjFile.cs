@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 using RobloxFiles.DataTypes;
 
@@ -39,16 +38,12 @@ namespace Rbx2Source.Geometry
                     if (line == null)
                         break;
 
-                    var parts = line
-                        .Split(' ')
-                        .Where(part => part != "")
-                        .ToList();
+                    string[] parts = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (parts.Count == 0)
+                    if (parts.Length == 0)
                         continue;
 
-                    string cmd = parts.First();
-                    parts.RemoveAt(0);
+                    string cmd = parts[0];
 
                     if (cmd == "g")
                     {
@@ -57,14 +52,15 @@ namespace Rbx2Source.Geometry
                         else
                             groupIndex++;
 
-                        var group = parts.First();
+                        var group = parts[1];
                         Groups.Add(group);
                     }
                     else if (cmd == "v" || cmd == "vn" || cmd == "vt")
                     {
-                        float[] values = parts
-                            .Select(value => float.Parse(value))
-                            .ToArray();
+                        float[] values = new float[parts.Length - 1];
+
+                        for (int i = 1; i < parts.Length; i++)
+                            values[i - 1] = float.Parse(parts[i]);
 
                         if (cmd == "vt")
                         {
@@ -84,8 +80,9 @@ namespace Rbx2Source.Geometry
                     {
                         var face = new List<ObjVert>();
 
-                        foreach (var faceData in parts)
+                        for (int i = 1; i < parts.Length; i++)
                         {
+                            var faceData = parts[i];
                             var indices = faceData.Split('/');
 
                             var objVert = new ObjVert();

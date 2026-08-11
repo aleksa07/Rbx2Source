@@ -1,10 +1,14 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace Rbx2Source.Assembler
 {
     static class FileUtility
     {
+        private static readonly HashSet<string> unlockedPaths = new HashSet<string>();
+        private static readonly object unlockedPathsLock = new object();
+
         public static string MakeNameWindowsSafe(string name, string replaceWith = "", bool doExtraStuff = true)
         {
             string result = Regex.Replace(name, @"[^A-Za-z0-9 _]", replaceWith).Trim();
@@ -17,14 +21,34 @@ namespace Rbx2Source.Assembler
 
         public static void UnlockFile(string path)
         {
+            string fullPath = Path.GetFullPath(path);
+
+            lock (unlockedPathsLock)
+            {
+                if (unlockedPaths.Contains(fullPath))
+                    return;
+            }
+
             if (File.Exists(path))
             {
                 File.SetAttributes(path, FileAttributes.Normal);
+
+                lock (unlockedPathsLock)
+                {
+                    unlockedPaths.Add(fullPath);
+                }
             }
         }
 
         public static void LockFile(string path)
         {
+            string fullPath = Path.GetFullPath(path);
+
+            lock (unlockedPathsLock)
+            {
+                unlockedPaths.Remove(fullPath);
+            }
+
             if (File.Exists(path))
             {
                 File.SetAttributes(path, FileAttributes.ReadOnly);

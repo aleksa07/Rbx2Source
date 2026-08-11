@@ -1,6 +1,7 @@
-﻿using System.Linq;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 
 using RobloxFiles;
 using RobloxFiles.DataTypes;
@@ -19,14 +20,21 @@ namespace Rbx2Source.Geometry
 
         public Color? Color;
         public MeshSkinning Skinning;
-        public Dictionary<int, float> Weights = new Dictionary<int, float>();
+        public Dictionary<int, float> Weights;
+
+        private static void AppendFloat(StringBuilder sb, float value)
+        {
+            if (float.IsNaN(value))
+                sb.Append('0');
+            else
+                sb.Append(value.ToString("0.#######", CultureInfo.InvariantCulture));
+        }
 
         public string WriteStudioMdl(StudioMdlWriter writer, BasePart identity, Mesh mesh)
         {
             var scale = Rbx2Source.MODEL_SCALE;
-            var numWeights = Weights.Keys.Count;
 
-            var values = new List<float>()
+            float[] baseValues =
             {
                 Position.X * scale,
                 Position.Y * scale,
@@ -40,38 +48,68 @@ namespace Rbx2Source.Geometry
                 1 - UV.Y,
             };
 
+            int numWeights = Weights == null ? 0 : Weights.Count;
+            int foundWeights = 0;
+            int insertAt = 8;
+
             if (numWeights > 0)
             {
                 foreach (var pair in Weights)
                 {
-                    int boneIndex = pair.Key;
-                    var bone = mesh.Bones[boneIndex];
+                    var bone = mesh.Bones[pair.Key];
 
                     if (bone.Name == identity.Name)
-                    {
                         numWeights -= 1;
-                        continue;
-                    }
-
-                    var targetNodeQuery = writer.Nodes
-                        .Where(node => node.Name == bone.Name)
-                        .Select(node => node.NodeIndex);
-
-                    if (targetNodeQuery.Any())
-                    {
-                        var targetNode = targetNodeQuery.First();
-                        float weight = pair.Value;
-
-                        values.Add(targetNode);
-                        values.Add(weight);
-                    }
+                    else if (writer.GetNodeIndexByName(bone.Name) >= 0)
+                        foundWeights += 1;
                 }
 
-                var insertAt = values.Count - (numWeights * 2);
-                values.Insert(insertAt, numWeights);
+                insertAt = 8 + (foundWeights * 2) - (numWeights * 2);
             }
 
-            return Format.FormatFloats(values.ToArray()).Replace(".0000000", "");
+            var sb = new StringBuilder(64);
+
+            for (int i = 0; i < insertAt; i++)
+            {
+                AppendFloat(sb, baseValues[i]);
+                sb.Append(' ');
+            }
+
+            if (numWeights > 0)
+            {
+                sb.Append(numWeights.ToInvariantString());
+                sb.Append(' ');
+            }
+
+            for (int i = insertAt; i < baseValues.Length; i++)
+            {
+                AppendFloat(sb, baseValues[i]);
+                sb.Append(' ');
+            }
+
+            if (numWeights > 0)
+            {
+                foreach (var pair in Weights)
+                {
+                    var bone = mesh.Bones[pair.Key];
+
+                    if (bone.Name == identity.Name)
+                        continue;
+
+                    int targetNode = writer.GetNodeIndexByName(bone.Name);
+
+                    if (targetNode >= 0)
+                    {
+                        sb.Append(targetNode.ToInvariantString());
+                        sb.Append(' ');
+                        AppendFloat(sb, pair.Value);
+                        sb.Append(' ');
+                    }
+                }
+            }
+
+            sb.Length -= 1;
+            return sb.ToString();
         }
     }
 }

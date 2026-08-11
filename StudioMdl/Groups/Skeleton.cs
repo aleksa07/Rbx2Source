@@ -27,10 +27,10 @@ namespace Rbx2Source.StudioMdl
             Contract.Requires(fileBuffer != null && skeleton != null);
             fileBuffer.WriteLine("time " + Time);
 
-            foreach (StudioBone bone in Bones)
+            for (int boneIndex = 0; boneIndex < Bones.Count; boneIndex++)
             {
-                int boneIndex = Bones.IndexOf(bone);
-                fileBuffer.Write(boneIndex + " ");
+                StudioBone bone = Bones[boneIndex];
+                fileBuffer.Write(boneIndex.ToInvariantString() + " ");
 
                 int parentIndex = bone.Node.ParentIndex;
                 CFrame boneCFrame = bone.C0;

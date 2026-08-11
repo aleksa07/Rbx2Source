@@ -90,8 +90,8 @@ namespace Rbx2Source.Geometry
             else
                 throw new Exception("Expected 2nd line to be the polygon count.");
 
-            mesh.Faces = new List<int[]>();
-            mesh.Verts = new List<Vertex>();
+            mesh.Faces = new List<int[]>(numFaces);
+            mesh.Verts = new List<Vertex>(numVerts);
             mesh.LodOffsets = new List<int>() { 0, numFaces };
 
             string polyBuffer = reader.ReadLine();
@@ -153,6 +153,7 @@ namespace Rbx2Source.Geometry
                         if (version == 1)
                         {
                             int numVerts = reader.ReadInt32();
+                            mesh.Verts.Capacity = numVerts;
 
                             for (int i = 0; i < numVerts; i++)
                             {
@@ -171,6 +172,7 @@ namespace Rbx2Source.Geometry
                             }
 
                             int numFaces = reader.ReadInt32();
+                            mesh.Faces.Capacity = numFaces;
 
                             for (int i = 0; i < numFaces; i++)
                             {
@@ -204,6 +206,9 @@ namespace Rbx2Source.Geometry
 
                                 var verts = mesh.Verts;
                                 var faces = mesh.Faces;
+
+                                verts.Capacity = dracoMesh.NumPoints;
+                                faces.Capacity = dracoMesh.NumFaces;
 
                                 for (int i = 0; i < dracoMesh.NumPoints; i++)
                                 {
@@ -366,6 +371,9 @@ namespace Rbx2Source.Geometry
                 numFaces = reader.ReadInt32();
             }
 
+            mesh.Verts.Capacity = numVerts;
+            mesh.Faces.Capacity = numFaces;
+
             // Read Vertices
             for (int i = 0; i < numVerts; i++)
             {
@@ -391,13 +399,25 @@ namespace Rbx2Source.Geometry
 
             if (mesh.Version >= 4 && numBones > 0)
             {
+                skinningData.Capacity = numVerts;
+                byte[] skinBuffer = new byte[8];
+
                 // Read Skinning
                 for (int i = 0; i < numVerts; i++)
                 {
+                    if (reader.Read(skinBuffer, 0, 8) < 8)
+                        throw new EndOfStreamException();
+
+                    var subsetIndices = new byte[4];
+                    var boneWeights = new byte[4];
+
+                    Buffer.BlockCopy(skinBuffer, 0, subsetIndices, 0, 4);
+                    Buffer.BlockCopy(skinBuffer, 4, boneWeights, 0, 4);
+
                     var skinning = new MeshSkinning()
                     {
-                        SubsetIndices = reader.ReadBytes(4),
-                        BoneWeights = reader.ReadBytes(4)
+                        SubsetIndices = subsetIndices,
+                        BoneWeights = boneWeights
                     };
 
                     skinningData.Add(skinning);
@@ -514,6 +534,10 @@ namespace Rbx2Source.Geometry
                             if (boneWeight > 0)
                             {
                                 var boneIndex = boneIndices[subsetIndex];
+
+                                if (vert.Weights == null)
+                                    vert.Weights = new Dictionary<int, float>();
+
                                 vert.Weights[boneIndex] = boneWeight / 255f;
                             }
                         }
@@ -522,20 +546,27 @@ namespace Rbx2Source.Geometry
             }
         }
 
+        private static readonly byte[] HeaderPrefix = Encoding.ASCII.GetBytes("version ");
+
         public static Mesh FromBuffer(byte[] data)
         {
-            string file = Encoding.UTF8.GetString(data);
-
-            if (!file.StartsWith("version ", StringComparison.InvariantCulture))
+            if (data == null || data.Length < 12)
                 throw new Exception("Invalid .mesh header!");
 
-            string versionStr = file.Substring(8, 4);
+            for (int i = 0; i < HeaderPrefix.Length; i++)
+            {
+                if (data[i] != HeaderPrefix[i])
+                    throw new Exception("Invalid .mesh header!");
+            }
+
+            string versionStr = Encoding.ASCII.GetString(data, 8, 4);
             double version = Format.ParseDouble(versionStr);
 
             Mesh mesh = new Mesh() { Version = (int)version };
             
             if (mesh.Version == 1)
             {
+                string file = Encoding.UTF8.GetString(data);
                 StringReader buffer = new StringReader(file);
                 LoadGeometry_Ascii(buffer, mesh);
                 buffer.Dispose();

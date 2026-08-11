@@ -222,13 +222,28 @@ namespace Rbx2Source.Animating
 
                     if (avatarType == "R15")
                     {
+                        // R15 reorder: same rotation as Rx(Roll) * Rz(Yaw) * Ry(Pitch),
+                        // composed from quaternions in a single pass.
                         var quat = new Quaternion(interp);
                         var angles = quat.ToEulerAngles();
 
-                        interp = CFrame.FromEulerAnglesXYZ(angles.Roll, 0, 0)
-                               * CFrame.FromEulerAnglesXYZ(0, 0, angles.Yaw)
-                               * CFrame.FromEulerAnglesXYZ(0, angles.Pitch, 0) 
-                               * new CFrame(interp.Position);
+                        float halfRoll = angles.Roll * 0.5f;
+                        float halfYaw = angles.Yaw * 0.5f;
+                        float halfPitch = angles.Pitch * 0.5f;
+
+                        var qx = new Quaternion((float)Math.Sin(halfRoll), 0f, 0f, (float)Math.Cos(halfRoll));
+                        var qz = new Quaternion(0f, 0f, (float)Math.Sin(halfYaw), (float)Math.Cos(halfYaw));
+                        var qy = new Quaternion(0f, (float)Math.Sin(halfPitch), 0f, (float)Math.Cos(halfPitch));
+
+                        CFrame rot = (qx * qz * qy).ToCFrame();
+                        Vector3 pos = rot * interp.Position;
+
+                        float[] comp = rot.GetComponents();
+                        comp[0] = pos.X;
+                        comp[1] = pos.Y;
+                        comp[2] = pos.Z;
+
+                        interp = new CFrame(comp);
                     }
                     // R6 poses are raw Roblox KeyframeSequence deltas. The DeltaSequence
                     // writer composes them with each bone's reference C0 (the classic R6

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using RobloxFiles;
 using Rbx2Source.Assembler;
+using Rbx2Source.Geometry;
 
 namespace Rbx2Source.StudioMdl
 {
@@ -16,10 +18,118 @@ namespace Rbx2Source.StudioMdl
     {
         private StringWriter buffer;
 
+        private Dictionary<string, int> nodeIndexByName;
+        private Dictionary<Node, int> nodeIndexByRef;
+        private Dictionary<Node, int> nodeParentIndex;
+        private Dictionary<Mesh, string[]> vertexCoordCache;
+
         public List<Node> Nodes;
         public List<Triangle> Triangles;
         public List<BoneKeyframe> Skeleton;
         public Dictionary<string, ValveMaterial> Materials;
+
+        internal void EnsureNodeIndexCache()
+        {
+            if (nodeIndexByRef != null)
+                return;
+
+            int count = Nodes.Count;
+            var byName = new Dictionary<string, int>(count);
+            var byRef = new Dictionary<Node, int>(count);
+            var parents = new Dictionary<Node, int>(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                Node node = Nodes[i];
+                byRef[node] = i;
+
+                string name = node.Name;
+                if (name != null && !byName.ContainsKey(name))
+                    byName[name] = i;
+            }
+
+            for (int i = 0; i < count; i++)
+                parents[Nodes[i]] = ComputeParentIndex(Nodes[i], count);
+
+            nodeIndexByName = byName;
+            nodeIndexByRef = byRef;
+            nodeParentIndex = parents;
+        }
+
+        private int ComputeParentIndex(Node node, int count)
+        {
+            BasePart part0 = node.StudioBone.Part0;
+            BasePart part1 = node.StudioBone.Part1;
+
+            if (part0 != part1)
+            {
+                StudioBone bone = node.StudioBone;
+
+                for (int i = 0; i < count; i++)
+                {
+                    Node n = Nodes[i];
+                    StudioBone b = n.StudioBone;
+
+                    if (b != bone && b.Part1 == part0)
+                        return i;
+                }
+            }
+
+            return -1;
+        }
+
+        internal int GetNodeIndexByName(string name)
+        {
+            var cache = nodeIndexByName;
+
+            if (cache != null && name != null && cache.TryGetValue(name, out int nodeIndex))
+                return nodeIndex;
+
+            return -1;
+        }
+
+        internal int GetNodeIndex(Node node)
+        {
+            var cache = nodeIndexByRef;
+
+            if (cache != null && cache.TryGetValue(node, out int nodeIndex))
+                return nodeIndex;
+
+            return -1;
+        }
+
+        internal int GetParentIndex(Node node)
+        {
+            var cache = nodeParentIndex;
+
+            if (cache != null && cache.TryGetValue(node, out int parentIndex))
+                return parentIndex;
+
+            return -1;
+        }
+
+        internal string[] GetCachedVertexCoords(Mesh mesh)
+        {
+            var cache = vertexCoordCache;
+
+            if (cache != null && cache.TryGetValue(mesh, out string[] coords))
+                return coords;
+
+            return null;
+        }
+
+        internal void SetCachedVertexCoords(Mesh mesh, string[] coords)
+        {
+            var cache = vertexCoordCache;
+
+            if (cache == null)
+            {
+                cache = new Dictionary<Mesh, string[]>();
+                vertexCoordCache = cache;
+            }
+
+            cache[mesh] = coords;
+        }
 
         private void WriteEntities<T>(List<T> entities) where T : IStudioMdlEntity<T>
         {
@@ -45,6 +155,12 @@ namespace Rbx2Source.StudioMdl
             buffer.WriteLine("version 1");
 
             WriteEntities(Nodes);
+
+            nodeIndexByName = null;
+            nodeIndexByRef = null;
+            nodeParentIndex = null;
+            EnsureNodeIndexCache();
+
             WriteEntities(Skeleton);
 
             if (writeGeometry)

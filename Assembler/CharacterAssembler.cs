@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using Rbx2Source.Animating;
 using Rbx2Source.Geometry;
@@ -33,6 +34,13 @@ namespace Rbx2Source.Assembler
         public static bool DEBUG_RAPID_ASSEMBLY = false;
         public string CustomModelName { get; set; }
         private const float DEG2RAD = (float)Math.PI / 180f;
+
+        // Caches baked mesh geometry (keyed by resolved mesh asset + bake
+        // inputs) so the collision pass reuses the character pass's mesh
+        // parse/decode work instead of re-baking every MeshPart. Cleared at
+        // the start of each Assemble() so a new avatar never leaks entries.
+        private static readonly object BakedMeshCacheLock = new object();
+        private static readonly Dictionary<string, Mesh> BakedMeshCache = new Dictionary<string, Mesh>();
 
         // User's choice from the Advanced tab (Default = auto-detect).
         public static HeadMode HeadModeSetting = HeadMode.Default;
@@ -96,20 +104,74 @@ namespace Rbx2Source.Assembler
             return result;
         }
 
-        private static void GenerateBones(BoneAssemblePrep prep, Attachment[] queue)
+        // Indexes the first attachment of each name found under each of bin's
+        // children, matching the lookup semantics of FindOtherAttachments.
+        private static Dictionary<string, List<Attachment>> IndexBinAttachments(Instance bin)
+        {
+            var byName = new Dictionary<string, List<Attachment>>();
+
+            foreach (Instance child in bin.GetChildren())
+            {
+                HashSet<string> seen = null;
+
+                foreach (Instance sub in child.GetChildren())
+                {
+                    if (!(sub is Attachment att))
+                        continue;
+
+                    if (seen == null)
+                        seen = new HashSet<string>();
+
+                    if (!seen.Add(att.Name))
+                        continue;
+
+                    if (!byName.TryGetValue(att.Name, out var list))
+                    {
+                        list = new List<Attachment>();
+                        byName[att.Name] = list;
+                    }
+
+                    list.Add(att);
+                }
+            }
+
+            return byName;
+        }
+
+        private static List<Attachment> FindOtherAttachments(Dictionary<string, List<Attachment>> attachmentsByName, Attachment a)
+        {
+            List<Attachment> result = new List<Attachment>();
+
+            if (attachmentsByName.TryGetValue(a.Name, out var candidates))
+            {
+                foreach (Attachment b in candidates)
+                {
+                    if (b != a)
+                        result.Add(b);
+                }
+            }
+
+            return result;
+        }
+
+        private static void GenerateBones(BoneAssemblePrep prep, Attachment[] queue, HashSet<Attachment> completed)
         {
             if (queue.Length == 0)
                 return;
 
             Instance bin = queue[0].Parent.Parent;
+            GenerateBones(prep, queue, bin, IndexBinAttachments(bin), completed);
+        }
 
+        private static void GenerateBones(BoneAssemblePrep prep, Attachment[] queue, Instance bin, Dictionary<string, List<Attachment>> attachmentsByName, HashSet<Attachment> completed)
+        {
             foreach (Attachment a0 in queue)
             {
-                List<Attachment> a1s = FindOtherAttachments(a0, bin);
+                List<Attachment> a1s = FindOtherAttachments(attachmentsByName, a0);
 
                 foreach (Attachment a1 in a1s)
                 {
-                    if (a1 != null && !prep.Completed.Contains(a1))
+                    if (a1 != null && !completed.Contains(a1))
                     {
                         BasePart part0 = (BasePart)a0.Parent;
                         BasePart part1 = (BasePart)a1.Parent;
@@ -128,19 +190,21 @@ namespace Rbx2Source.Assembler
                             prep.Bones.Add(bone);
 
                             Node node = bone.Node;
-                            node.NodeIndex = prep.Bones.IndexOf(bone);
+                            node.NodeIndex = prep.Bones.Count - 1;
                             prep.Nodes.Add(node);
 
-                            if (!prep.Completed.Contains(a0))
+                            if (completed.Add(a0))
                                 prep.Completed.Add(a0);
 
-                            prep.Completed.Add(a1);
+                            if (completed.Add(a1))
+                                prep.Completed.Add(a1);
+
                             part1.CFrame = part0.CFrame * a0.CFrame * a1.CFrame.Inverse();
 
                             if (prep.AllowNonRigs)
                                 continue;
 
-                            GenerateBones(prep, part1.GetChildrenOfType<Attachment>());
+                            GenerateBones(prep, part1.GetChildrenOfType<Attachment>(), bin, attachmentsByName, completed);
                         }
                         else // We'll deal with Accessory attachments afterwards.
                         {
@@ -176,11 +240,12 @@ namespace Rbx2Source.Assembler
 
             // Assemble the base rig.
             BoneAssemblePrep prep = new BoneAssemblePrep(ref bones, ref nodes);
-            GenerateBones(prep, rootPart.GetChildrenOfType<Attachment>());
+            var completed = new HashSet<Attachment>();
+            GenerateBones(prep, rootPart.GetChildrenOfType<Attachment>(), completed);
 
             // Assemble the accessories.
             prep.AllowNonRigs = true;
-            GenerateBones(prep, prep.NonRigs.ToArray());
+            GenerateBones(prep, prep.NonRigs.ToArray(), completed);
 
             // Apply the rig cframe data.
             meshBuilder.Skeleton.Add(kf);
@@ -292,7 +357,7 @@ namespace Rbx2Source.Assembler
             Rbx2Source.Print("Building Geometry for {0}", part.Name);
             Rbx2Source.IncrementStack();
 
-            Mesh geometry = Mesh.BakePart(part, material);
+            Mesh geometry = GetBakedMesh(part, material);
             meshBuilder.Materials[matName] = material;
             int faceStride = geometry.LodOffsets[1];
 
@@ -313,6 +378,127 @@ namespace Rbx2Source.Assembler
 
             Rbx2Source.DecrementStack();
             Rbx2Source.MarkTaskCompleted(task);
+        }
+
+        // Bakes (or reuses from cache) the geometry for a part. Head geometry is
+        // always baked fresh: the collision model swaps the head for a low-poly
+        // mesh, so a cached head bake would leak into the collision writer.
+        // Everything else is cached keyed by the resolved mesh asset plus the
+        // baked CFrame offset and scale, so parts that share a mesh id but have
+        // different transforms never reuse a wrong bake.
+        private static Mesh GetBakedMesh(BasePart part, ValveMaterial material)
+        {
+            bool isHead = GetLimb(part) == BodyPart.Head;
+            string cacheKey = (isHead || part.Transparency >= 1) ? null : GetBakedMeshCacheKey(part);
+
+            if (cacheKey != null)
+            {
+                lock (BakedMeshCacheLock)
+                {
+                    if (BakedMeshCache.TryGetValue(cacheKey, out Mesh cached))
+                    {
+                        SetupMaterialFromPart(part, material);
+                        return cached;
+                    }
+                }
+            }
+
+            Mesh geometry = Mesh.BakePart(part, material);
+
+            if (cacheKey != null && geometry != null)
+            {
+                lock (BakedMeshCacheLock)
+                {
+                    BakedMeshCache[cacheKey] = geometry;
+                }
+            }
+
+            return geometry;
+        }
+
+        // Resolves the mesh Mesh.BakePart would load for this part and derives a
+        // cache key from it plus the baked CFrame offset and scale. Returns null
+        // for parts with no cacheable mesh (legacy DataModelMesh / no mesh), which
+        // are always baked fresh.
+        private static string GetBakedMeshCacheKey(BasePart part)
+        {
+            CFrame offset = part.CFrame;
+            Vector3 scale = null;
+            string meshRef;
+
+            if (part is MeshPart meshPart)
+            {
+                string meshId = meshPart.MeshId;
+
+                if (meshId != null && meshId.Length > 0)
+                    meshRef = "id:" + meshId;
+                else
+                    meshRef = "std:" + part.Name; // StandardLimbs fallback is keyed by part name
+
+                var initialSize = meshPart.InitialSize;
+
+                if (initialSize.X == 0 || initialSize.Y == 0 || initialSize.Z == 0)
+                    scale = Vector3.one;
+                else
+                    scale = meshPart.Size / initialSize;
+            }
+            else
+            {
+                SpecialMesh specialMesh = part.FindFirstChildOfClass<SpecialMesh>();
+
+                if (specialMesh == null || specialMesh.MeshType != MeshType.FileMesh)
+                    return null;
+
+                meshRef = "id:" + specialMesh.MeshId;
+                offset *= new CFrame(specialMesh.Offset);
+                scale = specialMesh.Scale;
+            }
+
+            return meshRef + "|" + offset.ToString() + "|" + (scale ?? Vector3.one).ToString();
+        }
+
+        // Mirrors the material setup Mesh.BakePart performs so cached geometry
+        // can be reused without re-decoding the mesh file.
+        private static void SetupMaterialFromPart(BasePart part, ValveMaterial material)
+        {
+            material.LinkedTo = part;
+            material.Reflectance = part.Reflectance;
+            material.Transparency = part.Transparency;
+
+            if (part.Transparency >= 1)
+                return;
+
+            Asset albedoAsset = null;
+            Asset normalAsset = null;
+
+            if (part is MeshPart meshPart)
+            {
+                var surface = meshPart.FindFirstChildOfClass<SurfaceAppearance>();
+
+                if (surface != null)
+                {
+                    material.UseAvatarMap = false;
+                    albedoAsset = Asset.GetByAssetId(surface.ColorMap);
+                    normalAsset = Asset.GetByAssetId(surface.NormalMap);
+                }
+                else if (meshPart.TextureID != null)
+                {
+                    albedoAsset = Asset.GetByAssetId(meshPart.TextureID);
+                }
+            }
+            else
+            {
+                SpecialMesh specialMesh = part.FindFirstChildOfClass<SpecialMesh>();
+
+                if (specialMesh != null && specialMesh.MeshType == MeshType.FileMesh)
+                {
+                    albedoAsset = Asset.GetByAssetId(specialMesh.TextureId);
+                    material.VertexColor = specialMesh.VertexColor;
+                }
+            }
+
+            material.AddTextureAsset("basetexture", albedoAsset);
+            material.AddTextureAsset("bumpmap", normalAsset);
         }
 
         public static Folder AppendCharacterAssets(UserAvatar avatar, string avatarType, string context = "CHARACTER")
@@ -342,86 +528,99 @@ namespace Rbx2Source.Assembler
                 else if (typeSpecific != null)
                     import = typeSpecific;
 
-                if (rotation != null)
+                bool hasName = info.Name != null && info.Name.Length > 0;
+                HashSet<SpecialMesh> headMeshes = null;
+
+                // Single tree walk replacing the previous rotation / name-stamp /
+                // position / scale passes. Each instance gets its transforms applied
+                // in the same order the old passes used; head meshes (a SpecialMesh
+                // named "Mesh" with a NeckRigAttachment descendant) are collected
+                // here and stamped with the AssetName below.
+                foreach (Instance desc in import.GetDescendants())
                 {
-                    // Meta rotation is applied to the attachment orientation.
-                    // The position must be preserved, otherwise an attachment
-                    // with its own 180-degree rotation (e.g. FaceFrontAttachment
-                    // glasses) gets its position flipped even when meta
-                    // rotation is (0, 0, 0).
-
-                    foreach (var att in import.GetDescendantsOfType<Attachment>())
+                    if (desc is Attachment att)
                     {
-                        var cf = att.CFrame;
-                        var rot = cf.Rotation;
-                        var pos = cf.Position;
+                        CFrame cf = att.CFrame;
 
-                        var newRot = rot
-                            * CFrame.Angles(0, 0, -rotation.Z * DEG2RAD)
-                            * CFrame.Angles(-rotation.X * DEG2RAD, 0, 0)
-                            * CFrame.Angles(0, -rotation.Y * DEG2RAD, 0);
+                        if (rotation != null)
+                        {
+                            // Meta rotation is applied to the attachment orientation.
+                            // The position must be preserved, otherwise an attachment
+                            // with its own 180-degree rotation (e.g. FaceFrontAttachment
+                            // glasses) gets its position flipped even when meta
+                            // rotation is (0, 0, 0).
+                            var rot = cf.Rotation;
+                            var pos = cf.Position;
 
-                        var newCF = newRot + pos;
-                        att.CFrame = newCF;
+                            var newRot = rot
+                                * CFrame.Angles(0, 0, -rotation.Z * DEG2RAD)
+                                * CFrame.Angles(-rotation.X * DEG2RAD, 0, 0)
+                                * CFrame.Angles(0, -rotation.Y * DEG2RAD, 0);
+
+                            cf = newRot + pos;
+                        }
+
+                        if (position != null)
+                            cf *= new CFrame(-position);
+
+                        if (scale != null)
+                            cf = cf.Rotation + (cf.Position * scale);
+
+                        att.CFrame = cf;
+                    }
+                    else if (desc is Vector3Value vec3)
+                    {
+                        if (scale != null)
+                            vec3.Value *= scale;
+
+                        if (hasName && vec3.Name == "NeckRigAttachment")
+                        {
+                            Instance parent = vec3.Parent;
+
+                            while (parent != null)
+                            {
+                                if (parent is SpecialMesh headMesh
+                                    && headMesh.Name == "Mesh"
+                                    && headMesh.MeshType == MeshType.FileMesh)
+                                {
+                                    if (headMeshes == null)
+                                        headMeshes = new HashSet<SpecialMesh>();
+
+                                    headMeshes.Add(headMesh);
+                                }
+
+                                parent = parent.Parent;
+                            }
+                        }
+                    }
+                    else if (desc is BasePart part)
+                    {
+                        if (scale != null)
+                            part.Size *= scale;
+                    }
+                    else if (desc is SpecialMesh specialMesh)
+                    {
+                        if (scale != null)
+                            specialMesh.Scale *= scale;
+                    }
+                    else if (desc is FileMesh mesh)
+                    {
+                        if (scale != null)
+                            mesh.Scale *= scale;
                     }
                 }
 
                 // Stamp the source asset name onto the head mesh so face detection
                 // can classify faceless/headless heads by name.
-                if (info.Name != null && info.Name.Length > 0)
+                if (hasName && headMeshes != null)
                 {
-                    foreach (SpecialMesh mesh in import.GetDescendantsOfType<SpecialMesh>())
+                    foreach (SpecialMesh mesh in headMeshes)
                     {
-                        if (mesh.Name != "Mesh" || mesh.MeshType != MeshType.FileMesh)
-                            continue;
-
-                        bool isHeadMesh = mesh.GetDescendantsOfType<Vector3Value>()
-                            .Any(v => v.Name == "NeckRigAttachment");
-
-                        if (!isHeadMesh)
-                            continue;
-
                         StringValue existing = mesh.FindFirstChild<StringValue>("AssetName");
                         if (existing != null)
                             existing.Destroy();
 
                         new StringValue { Name = "AssetName", Value = info.Name }.Parent = mesh;
-                    }
-                }
-
-                if (position != null)
-                {
-                    foreach (var desc in import.GetDescendants())
-                    {
-                        if (desc is Attachment att)
-                        {
-                            att.CFrame *= new CFrame(-position);
-                        }
-                    }
-                }
-
-
-                if (scale != null)
-                {
-                    foreach (var desc in import.GetDescendants())
-                    {
-                        if (desc is BasePart part)
-                        {
-                            part.Size *= scale;
-                        }
-                        else if (desc is FileMesh mesh)
-                        {
-                            mesh.Scale *= scale;
-                        }
-                        else if (desc is Vector3Value vec3)
-                        {
-                            vec3.Value *= scale;
-                        }
-                        else if (desc is Attachment att)
-                        {
-                            var cf = att.CFrame;
-                            att.CFrame = cf.Rotation + (cf.Position * scale);
-                        }
                     }
                 }
 
@@ -631,16 +830,44 @@ namespace Rbx2Source.Assembler
 
                 using (var stream = new MemoryStream(content))
                 using (var image = new Bitmap(stream))
+                using (var argb = image.PixelFormat == PixelFormat.Format32bppArgb
+                    ? image
+                    : new Bitmap(image.Width, image.Height, PixelFormat.Format32bppArgb))
                 {
-                    for (int y = 0; y < image.Height; y += 4)
+                    if (!ReferenceEquals(argb, image))
                     {
-                        for (int x = 0; x < image.Width; x += 4)
-                        {
-                            int alpha = image.GetPixel(x, y).A;
+                        using (Graphics g = Graphics.FromImage(argb))
+                            g.DrawImage(image, 0, 0, image.Width, image.Height);
+                    }
 
-                            if (alpha >= 16 && alpha <= 239)
-                                return true;
+                    var rect = new Rectangle(0, 0, argb.Width, argb.Height);
+                    BitmapData data = argb.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+                    try
+                    {
+                        int stride = data.Stride;
+                        int bufferLength = Math.Abs(stride) * argb.Height;
+                        byte[] pixels = new byte[bufferLength];
+                        Marshal.Copy(data.Scan0, pixels, 0, bufferLength);
+
+                        bool topDown = stride > 0;
+
+                        for (int y = 0; y < argb.Height; y += 4)
+                        {
+                            int row = topDown ? y * stride : (argb.Height - 1 - y) * stride;
+
+                            for (int x = 0; x < argb.Width; x += 4)
+                            {
+                                int alpha = pixels[row + x * 4 + 3];
+
+                                if (alpha >= 16 && alpha <= 239)
+                                    return true;
+                            }
                         }
+                    }
+                    finally
+                    {
+                        argb.UnlockBits(data);
                     }
                 }
             }
@@ -679,6 +906,9 @@ namespace Rbx2Source.Assembler
         public AssemblerData Assemble(UserAvatar avatar)
         {
             Contract.Requires(avatar != null);
+
+            lock (BakedMeshCacheLock)
+                BakedMeshCache.Clear();
 
             UserInfo userInfo = avatar.UserInfo;
             string userName = FileUtility.MakeNameWindowsSafe(userInfo.Name);

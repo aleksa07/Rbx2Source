@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using Rbx2Source.Geometry;
 using RobloxFiles;
@@ -117,77 +119,52 @@ namespace Rbx2Source.Textures
 
             foreach (CompositData composit in layers)
             {
-                var buffer = Graphics.FromImage(bitmap);
                 var drawFlags = composit.DrawFlags;
                 var canvas = composit.Rect;
 
                 if (drawFlags.HasFlag(DrawFlags.Rect))
                 {
-                    if (drawFlags.HasFlag(DrawFlags.Color))
+                    using (var buffer = Graphics.FromImage(bitmap))
                     {
-                        composit.UseBrush(brush => buffer.FillRectangle(brush, canvas));
-                    }
-                    else if (drawFlags.HasFlag(DrawFlags.Texture))
-                    {
-                        Bitmap image = composit.GetTextureBitmap();
+                        if (drawFlags.HasFlag(DrawFlags.Color))
+                        {
+                            composit.UseBrush(brush => buffer.FillRectangle(brush, canvas));
+                        }
+                        else if (drawFlags.HasFlag(DrawFlags.Texture))
+                        {
+                            Bitmap image = composit.GetTextureBitmap();
 
-                        if (composit.FlipMode > 0)
-                            image.RotateFlip(composit.FlipMode);
+                            if (composit.FlipMode > 0)
+                                image.RotateFlip(composit.FlipMode);
 
-                        buffer.DrawImage(image, canvas);
+                            buffer.DrawImage(image, canvas);
+                        }
                     }
                 }
                 else if (drawFlags.HasFlag(DrawFlags.Guide))
                 {
                     Mesh guide = composit.Guide;
 
-                    for (int face = 0; face < guide.Faces.Count; face++)
+                    if (drawFlags.HasFlag(DrawFlags.Color))
                     {
-                        Vertex[] verts = composit.GetGuideVerts(face);
-                        Point offset = canvas.Location;
-                        
-                        Point[] poly = verts
-                            .Select(vert => vert.ToPoint(canvas, offset))
-                            .ToArray();
-                        
-                        if (drawFlags.HasFlag(DrawFlags.Color))
+                        using (var buffer = Graphics.FromImage(bitmap))
                         {
-                            composit.UseBrush(brush => buffer.FillPolygon(brush, poly));
-                        }
-                        else if (drawFlags.HasFlag(DrawFlags.Texture))
-                        {
-                            Bitmap texture = composit.GetTextureBitmap();
-                            Rectangle bbox = GetBoundingBox(poly);
-
-                            Point origin = bbox.Location;
-                            Bitmap drawLayer = new Bitmap(bbox.Width, bbox.Height);
-
-                            Point[] uv = verts
-                                .Select(vert => vert.ToUV(texture))
-                                .ToArray();
-                            
-                            int origin_X = origin.X, 
-                                origin_Y = origin.Y;
-
-                            for (int x = bbox.Left; x < bbox.Right; x++)
+                            for (int face = 0; face < guide.Faces.Count; face++)
                             {
-                                for (int y = bbox.Top; y < bbox.Bottom; y++)
-                                {
-                                    var pixel = new Point(x, y);
-                                    var bcPoint = new BarycentricPoint(pixel, poly);
+                                Vertex[] verts = composit.GetGuideVerts(face);
+                                Point offset = canvas.Location;
 
-                                    if (bcPoint.InBounds())
-                                    {
-                                        var uvPixel = bcPoint.ToCartesian(uv);
-                                        Color color = texture.GetPixel(uvPixel.X, uvPixel.Y);
-                                        drawLayer.SetPixel(x - origin_X, y - origin_Y, color);
-                                    }
-                                }
+                                Point[] poly = verts
+                                    .Select(vert => vert.ToPoint(canvas, offset))
+                                    .ToArray();
+
+                                composit.UseBrush(brush => buffer.FillPolygon(brush, poly));
                             }
-
-                            buffer.DrawImage(drawLayer, origin);
-                            drawLayer.Dispose();
                         }
+                    }
+                    else if (drawFlags.HasFlag(DrawFlags.Texture))
+                    {
+                        BakeGuideTextures(bitmap, composit);
                     }
                 }
 
@@ -195,14 +172,168 @@ namespace Rbx2Source.Textures
 
                 if (layers.Count > 2)
                     Rbx2Source.SetDebugImage(bitmap);
-
-                buffer.Dispose();
             }
 
             Rbx2Source.Print("Done!");
             Rbx2Source.DecrementStack();
 
             return bitmap;
+        }
+
+        private void BakeGuideTextures(Bitmap bitmap, CompositData composit)
+        {
+            Bitmap texture = composit.GetTextureBitmap();
+
+            BitmapData texData = texture.LockBits(
+                new Rectangle(0, 0, texture.Width, texture.Height),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format32bppArgb);
+
+            BitmapData drawData = bitmap.LockBits(
+                new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadWrite,
+                PixelFormat.Format32bppArgb);
+
+            try
+            {
+                int texStride, drawStride;
+                byte[] texBuffer = CopyLockedRegion(texData, out texStride);
+                byte[] drawBuffer = CopyLockedRegion(drawData, out drawStride);
+
+                int textureWidth = texture.Width,
+                    textureHeight = texture.Height;
+
+                Mesh guide = composit.Guide;
+                Rectangle canvas = composit.Rect;
+                Point offset = canvas.Location;
+
+                for (int face = 0; face < guide.Faces.Count; face++)
+                {
+                    Vertex[] verts = composit.GetGuideVerts(face);
+
+                    Point[] poly = verts
+                        .Select(vert => vert.ToPoint(canvas, offset))
+                        .ToArray();
+
+                    Point[] uv = verts
+                        .Select(vert => vert.ToUV(texture))
+                        .ToArray();
+
+                    Rectangle bbox = GetBoundingBox(poly);
+                    bbox.Intersect(new Rectangle(0, 0, bitmap.Width, bitmap.Height));
+
+                    if (bbox.Width <= 0 || bbox.Height <= 0)
+                        continue;
+
+                    var sampler = new BarycentricPoint(poly);
+
+                    for (int x = bbox.Left; x < bbox.Right; x++)
+                    {
+                        for (int y = bbox.Top; y < bbox.Bottom; y++)
+                        {
+                            Point uvPixel;
+                            if (!sampler.TryMap(new Point(x, y), uv, out uvPixel))
+                                continue;
+
+                            int tx = uvPixel.X,
+                                ty = uvPixel.Y;
+
+                            if (tx < 0) tx = 0;
+                            else if (tx >= textureWidth) tx = textureWidth - 1;
+
+                            if (ty < 0) ty = 0;
+                            else if (ty >= textureHeight) ty = textureHeight - 1;
+
+                            int src = (ty * texStride) + (tx * 4);
+                            int dst = (y * drawStride) + (x * 4);
+
+                            int sa = texBuffer[src + 3];
+
+                            if (sa == 0)
+                                continue;
+
+                            if (sa == 255)
+                            {
+                                drawBuffer[dst]     = texBuffer[src];
+                                drawBuffer[dst + 1] = texBuffer[src + 1];
+                                drawBuffer[dst + 2] = texBuffer[src + 2];
+                                drawBuffer[dst + 3] = texBuffer[src + 3];
+                                continue;
+                            }
+
+                            int sr = texBuffer[src + 2],
+                                sg = texBuffer[src + 1],
+                                sb = texBuffer[src];
+
+                            int da = drawBuffer[dst + 3],
+                                dr = drawBuffer[dst + 2],
+                                dg = drawBuffer[dst + 1],
+                                db = drawBuffer[dst];
+
+                            int inv = 255 - sa;
+                            int outA = sa + (da * inv) / 255;
+
+                            if (outA <= 0)
+                            {
+                                drawBuffer[dst]     = 0;
+                                drawBuffer[dst + 1] = 0;
+                                drawBuffer[dst + 2] = 0;
+                                drawBuffer[dst + 3] = 0;
+                                continue;
+                            }
+
+                            drawBuffer[dst]     = (byte)(((sa * sb) + ((da * db * inv) / 255)) / outA);
+                            drawBuffer[dst + 1] = (byte)(((sa * sg) + ((da * dg * inv) / 255)) / outA);
+                            drawBuffer[dst + 2] = (byte)(((sa * sr) + ((da * dr * inv) / 255)) / outA);
+                            drawBuffer[dst + 3] = (byte)outA;
+                        }
+                    }
+                }
+
+                WriteLockedRegion(drawBuffer, drawData);
+            }
+            finally
+            {
+                texture.UnlockBits(texData);
+                bitmap.UnlockBits(drawData);
+            }
+        }
+
+        private static byte[] CopyLockedRegion(BitmapData data, out int absStride)
+        {
+            int stride = data.Stride;
+            absStride = Math.Abs(stride);
+
+            byte[] buffer = new byte[absStride * data.Height];
+
+            if (stride > 0)
+            {
+                Marshal.Copy(data.Scan0, buffer, 0, buffer.Length);
+            }
+            else
+            {
+                for (int y = 0; y < data.Height; y++)
+                    Marshal.Copy(data.Scan0 + (stride * y), buffer, y * absStride, absStride);
+            }
+
+            return buffer;
+        }
+
+        private static void WriteLockedRegion(byte[] buffer, BitmapData data)
+        {
+            int stride = data.Stride;
+
+            if (stride > 0)
+            {
+                Marshal.Copy(buffer, 0, data.Scan0, buffer.Length);
+            }
+            else
+            {
+                int absStride = -stride;
+
+                for (int y = 0; y < data.Height; y++)
+                    Marshal.Copy(buffer, y * absStride, data.Scan0 + (stride * y), absStride);
+            }
         }
 
         public static Bitmap CropBitmap(Bitmap src, Rectangle crop)

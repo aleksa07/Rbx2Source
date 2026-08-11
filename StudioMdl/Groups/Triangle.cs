@@ -21,22 +21,34 @@ namespace Rbx2Source.StudioMdl
         {
             Contract.Requires(buffer != null && triangles != null);
 
+            writer.EnsureNodeIndexCache();
+
             var verts = Mesh.Verts;
             int boneIndex = Node.NodeIndex;
+
+            string[] coords = writer.GetCachedVertexCoords(Mesh);
+
+            if (coords == null)
+            {
+                var part1 = Node.StudioBone.Part1;
+                coords = new string[verts.Count];
+
+                for (int i = 0; i < verts.Count; i++)
+                    coords[i] = verts[i].WriteStudioMdl(writer, part1, Mesh);
+
+                writer.SetCachedVertexCoords(Mesh, coords);
+            }
 
             int[] face = Mesh.Faces[FaceIndex];
             buffer.WriteLine(Material);
 
-            var studioBone = Node.StudioBone;
-            var part1 = studioBone.Part1;
-            
             for (int i = 0; i < 3; i++)
             {
-                Vertex vert = verts[face[i]];
-                string coords = vert.WriteStudioMdl(writer, part1, Mesh);
+                string coordStr = coords[face[i]];
 
-                string line = string.Join(" ", boneIndex, coords);
-                buffer.WriteLine(line);
+                buffer.Write(boneIndex.ToInvariantString());
+                buffer.Write(' ');
+                buffer.WriteLine(coordStr);
             }
         }
     }

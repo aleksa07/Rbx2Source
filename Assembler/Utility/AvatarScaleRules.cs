@@ -1,9 +1,25 @@
-﻿using RobloxFiles.DataTypes;
+﻿using System.Collections.Generic;
+using System.Reflection;
+
+using RobloxFiles.DataTypes;
 
 namespace Rbx2Source.Assembler
 {
     public class AvatarScaleRules
     {
+        private static readonly Dictionary<string, FieldInfo> fields;
+
+        static AvatarScaleRules()
+        {
+            fields = new Dictionary<string, FieldInfo>();
+
+            foreach (FieldInfo field in typeof(AvatarScaleRules)
+                .GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                fields[field.Name] = field;
+            }
+        }
+
         public Vector3 Head;
         public Vector3 UpperTorso;
         public Vector3 LowerTorso;
@@ -28,16 +44,10 @@ namespace Rbx2Source.Assembler
         {
             get
             {
-                try
-                {
-                    var type = GetType();
-                    var fieldInfo = type.GetField(limbName);
-                    return fieldInfo.GetValue(this) as Vector3;
-                }
-                catch
-                {
-                    return new Vector3(1, 1, 1);
-                }
+                if (fields.TryGetValue(limbName, out FieldInfo field))
+                    return field.GetValue(this) as Vector3;
+
+                return new Vector3(1, 1, 1);
             }
         }
     }

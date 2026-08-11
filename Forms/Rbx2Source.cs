@@ -53,7 +53,7 @@ namespace Rbx2Source
         private List<Control> CONTROLS_TO_DISABLE_WHEN_COMPILING;
 
         private static int stackLevel = 0;
-        private static readonly List<OutputLog> outputQueue = new List<OutputLog>();
+        private static readonly Queue<OutputLog> outputQueue = new Queue<OutputLog>();
         private const string outputDivider = "---------------------------------------------------------------------------";
 
         private static readonly Dictionary<string, bool> progressQueue = new Dictionary<string, bool>();
@@ -66,6 +66,12 @@ namespace Rbx2Source
         private string assetPreviewImage = "";
 
         private bool init = true;
+
+        private readonly Timer apiKeyDebounceTimer;
+        private readonly Timer previewPollTimer;
+        private string pendingApiKey;
+        private Task<string> pendingCdnTask;
+        private string pendingCdnUrl;
 
         public static string GetApiKey()
         {
@@ -115,6 +121,12 @@ namespace Rbx2Source
                 useExistingObj.Checked = true;
             }
 
+            apiKeyDebounceTimer = new Timer { Interval = 500 };
+            apiKeyDebounceTimer.Tick += apiKeyDebounceTimer_Tick;
+
+            previewPollTimer = new Timer { Interval = 500 };
+            previewPollTimer.Tick += previewPollTimer_Tick;
+
             try
             {
                 apiKeyInput.Text = GetApiKey();
@@ -162,7 +174,7 @@ namespace Rbx2Source
 
         private static void PrintInternal(OutputLog log)
         {
-            outputQueue.Add(log);
+            outputQueue.Enqueue(log);
         }
 
         public static void IncrementStack()
@@ -466,7 +478,7 @@ namespace Rbx2Source
             {
                 if (init)
                 {
-                    assetPreview.Image = loadingImage;
+                    RunOnUI(() => assetPreview.Image = loadingImage);
                     currentAssetId = assetId;
                     return true;
                 }
@@ -556,15 +568,28 @@ namespace Rbx2Source
 
         private async Task UpdateCompilerState()
         {
-            while (outputQueue.Count > 0)
+            if (outputQueue.Count > 0)
             {
-                OutputLog next = outputQueue[0];
-                outputQueue.RemoveAt(0);
+                output.SuspendLayout();
 
-                if (!output.IsDisposed) // Prevents a crash if the user quits during the compilation.
+                try
                 {
-                    output.SelectionFont = new Font(output.Font, next.FontStyle);
-                    WriteLine(next.Message);
+                    while (outputQueue.Count > 0)
+                    {
+                        OutputLog next = outputQueue.Dequeue();
+
+                        if (!output.IsDisposed) // Prevents a crash if the user quits during the compilation.
+                        {
+                            if (output.SelectionFont == null || output.SelectionFont.Style != next.FontStyle)
+                                output.SelectionFont = new Font(output.Font, next.FontStyle);
+
+                            WriteLine(next.Message);
+                        }
+                    }
+                }
+                finally
+                {
+                    output.ResumeLayout();
                 }
             }
 
@@ -648,8 +673,8 @@ namespace Rbx2Source
         private async void compile_Click(object sender, EventArgs e)
         {
             var apiKey = GetApiKey();
-            
-            if (!ValidateApiKey(apiKey))
+
+            if (!await Task.Run(() => ValidateApiKey(apiKey)))
             {
                 showError("Valid API key required to compile!");
                 return;
@@ -834,7 +859,7 @@ namespace Rbx2Source
             }
         }
 
-        private void Rbx2Source_Load(object sender, EventArgs e)
+        private async void Rbx2Source_Load(object sender, EventArgs e)
         {
             string steamDir = null;
             Process[] steamProcesses = Process.GetProcessesByName("Steam");
@@ -949,10 +974,10 @@ namespace Rbx2Source
 
             string userName = Settings.GetString("Username");
             if (userName != null)
-                TrySetUsername(userName);
+                await Task.Run(() => TrySetUsername(userName));
 
             string assetId = Settings.GetString("AssetId");
-            TrySetAssetId(assetId);
+            await Task.Run(() => TrySetAssetId(assetId));
 
             selectedGame = sourceGames[gameSelect.Text];
             updateDisplays();
@@ -989,69 +1014,82 @@ namespace Rbx2Source
             foreach (Control link in Links.Keys)
                 link.Click += new EventHandler(onLinkClicked);
 
-            Task.Run(async () =>
-            {
-                while (!IsDisposed)
-                {
-                    if (assetPreview.ImageLocation != assetPreviewImage)
-                    {
-                        CdnPender check = WebUtil.DownloadJSON<CdnPender>(assetPreviewImage);
-
-                        if (check.Data[0].State == "Completed")
-                        {
-                            //final = pender.Data[0].State == "Final";
-                            //result = pender.Data[0].ImageUrl.ToString();
-                            assetPreviewImage = check.Data[0].ImageUrl.ToString();
-                            assetPreview.ImageLocation = check.Data[0].ImageUrl.ToString();
-                        }
-                        else
-                        {
-                            string currentPending = assetPreviewImage; // localize this in case it changes.
-                            assetPreview.Image = loadingImage;
-
-                            Task<string> pend = Task.Run(() => WebUtil.PendCdn(currentPending, false));
-
-                            while (!pend.IsCompleted)
-                            {
-                                if (assetPreviewImage != currentPending)
-                                    break;
-
-                                if (pend.IsFaulted)
-                                    break;
-
-                                await Task.Delay(100);
-                            }
-
-                            if (assetPreviewImage == currentPending)
-                            {
-                                if (pend.IsFaulted) // mark the preview as broken.
-                                {
-                                    assetPreviewImage = "";
-                                    assetPreview.ImageLocation = "";
-                                    assetPreview.Image = brokenImage;
-                                }
-                                else
-                                {
-                                    string result = pend.Result;
-                                    assetPreviewImage = result;
-                                    assetPreview.ImageLocation = result;
-                                }
-                            }
-                        }
-                    }
-
-                    if (Debugger.IsAttached && debugImg.Image != debugImage)
-                        debugImg.Image = debugImage;
-
-                    await Task.Delay(10);
-                }
-            });
+            previewPollTimer.Start();
 
             init = false;
         }
 
+        private void previewPollTimer_Tick(object sender, EventArgs e)
+        {
+            if (IsDisposed)
+                return;
+
+            if (pendingCdnTask != null && pendingCdnTask.IsCompleted)
+            {
+                string pendingUrl = pendingCdnUrl;
+                Task<string> pend = pendingCdnTask;
+                pendingCdnTask = null;
+                pendingCdnUrl = null;
+
+                if (assetPreviewImage == pendingUrl)
+                {
+                    if (pend.IsFaulted)
+                    {
+                        assetPreviewImage = "";
+                        assetPreview.ImageLocation = "";
+                        assetPreview.Image = brokenImage;
+                    }
+                    else
+                    {
+                        string result = pend.Result;
+                        assetPreviewImage = result;
+                        assetPreview.ImageLocation = result;
+                    }
+                }
+            }
+
+            if (assetPreview.ImageLocation != assetPreviewImage && pendingCdnTask == null)
+            {
+                CdnPender check = null;
+
+                try
+                {
+                    check = WebUtil.DownloadJSON<CdnPender>(assetPreviewImage);
+                }
+                catch
+                {
+                }
+
+                if (check != null && check.Data != null && check.Data.Length > 0)
+                {
+                    if (check.Data[0].State == "Completed")
+                    {
+                        assetPreviewImage = check.Data[0].ImageUrl.ToString();
+                        assetPreview.ImageLocation = check.Data[0].ImageUrl.ToString();
+                    }
+                    else
+                    {
+                        assetPreview.Image = loadingImage;
+                        string currentPending = assetPreviewImage;
+                        pendingCdnUrl = currentPending;
+                        pendingCdnTask = Task.Run(() => WebUtil.PendCdn(currentPending, false));
+                    }
+                }
+            }
+            else if (pendingCdnTask != null)
+            {
+                pendingCdnTask = null;
+                pendingCdnUrl = null;
+            }
+
+            if (Debugger.IsAttached && debugImg.Image != debugImage)
+                debugImg.Image = debugImage;
+        }
+
         private void Rbx2Source_FormClosed(object sender, FormClosedEventArgs e)
         {
+            previewPollTimer?.Stop();
+            apiKeyDebounceTimer?.Stop();
             baseProcess?.Dispose();
         }
 
@@ -1072,20 +1110,58 @@ namespace Rbx2Source
 
         private void apiKeyInput_TextChanged(object sender, EventArgs e)
         {
-            var newApiKey = apiKeyInput.Text;
-            var valid = true;
-
-            if (newApiKey.Length > 0)
-                valid = ValidateApiKey(newApiKey);
-
-            if (valid)
-            {
-                SetApiKey(newApiKey);
+            if (apiKeyDebounceTimer == null)
                 return;
-            }
 
-            MessageBox.Show("Invalid/Misconfigured API key!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            apiKeyInput.Text = "";
+            if (apiKeyInput.Text.Length > 0)
+            {
+                pendingApiKey = apiKeyInput.Text;
+                apiKeyDebounceTimer.Stop();
+                apiKeyDebounceTimer.Start();
+            }
+            else
+            {
+                apiKeyDebounceTimer.Stop();
+                pendingApiKey = null;
+            }
+        }
+
+        private void apiKeyDebounceTimer_Tick(object sender, EventArgs e)
+        {
+            apiKeyDebounceTimer.Stop();
+            string candidate = pendingApiKey;
+
+            if (string.IsNullOrEmpty(candidate))
+                return;
+
+            Task.Run(() => ValidateApiKey(candidate)).ContinueWith(prev =>
+            {
+                bool valid = false;
+
+                try
+                {
+                    valid = prev.Result;
+                }
+                catch
+                {
+                }
+
+                RunOnUI(() =>
+                {
+                    if (apiKeyInput.Text != candidate)
+                        return;
+
+                    if (valid)
+                    {
+                        SetApiKey(candidate);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Invalid/Misconfigured API key!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        apiKeyInput.Text = "";
+                    }
+                });
+            });
         }
 
         private void useExistingObj_CheckedChanged(object sender, EventArgs e)
