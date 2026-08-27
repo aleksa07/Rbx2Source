@@ -43,6 +43,11 @@ Configurations: `Debug|AnyCPU` (default), `Release|AnyCPU`, `Debug|x64`, `Releas
 - [ ] Enhancement: Model name textbox could be saved/loaded from settings
 - [ ] Enhancement: OutfitID field in form could show outfit name on load
 
+## v2.11.0 changelog
+- [x] Release: Bumped all version refs to 2.11.0 (AssemblyInfo, App.config, form title, version.txt, Settings.cs, in-app changelog, git tag)
+- [x] Performance: Merged PR #4 (havaianasdestruido) — 33 audit bottlenecks fixed: HTTP caching, texture compositing, SMD writing, mesh parsing, UI threading, subprocess/IO, assembler core, settings/reflection/animation
+- [x] Verified: CI build green; user-tested many avatars with no compile/model errors; R6 anims unchanged
+
 ## v2.10.5 changelog
 - [x] Release: Bumped all version refs to 2.10.5 (AssemblyInfo, App.config, form title, version.txt, Settings.cs, in-app changelog, git tag)
 - [x] Bug: R6 animations fixed — raw delta frames + QC `$delta` (Source composes `reference * delta` = Roblox's `C0 * pose`); no longer scramble or mirror in-game
