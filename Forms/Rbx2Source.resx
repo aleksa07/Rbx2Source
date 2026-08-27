@@ -118,7 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="changeLogBox.Text" xml:space="preserve">
-    <value>[v2.10.5] (August 6th, 2026)
+    <value>[v2.11.0] (August 27th, 2026)
+
+• Fixed 33 performance/audit bottlenecks: HTTP caching, texture compositing, SMD writing, mesh parsing, UI threading, subprocess/IO, assembler core, settings/reflection/animation
+• Thanks to havaianasdestruido for the PR
+______________________________________________________
+[v2.10.5] (August 6th, 2026)
 
 • Fixed R6 animations so they no longer scramble or mirror in-game
 • Added head mode (Default / Faceless / Headless) with auto-detect from the head asset name
